@@ -29,3 +29,14 @@ node_modules/
 # Others
 *.db
 *.bak
+
+# v0 runtime files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+
+# Common ignores
+.next/
+.env*.local
+.DS_Store
+.vercel

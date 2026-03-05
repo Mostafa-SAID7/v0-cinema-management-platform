@@ -10,7 +10,7 @@ namespace MoviesAPI.Application.Mappings
         public ScreeningProfile()
         {
             // Entity to Response
-            CreateMap<Screening, ScreeningResponse>()
+            CreateMap<Screening, MoviesAPI.Application.DTOs.Responses.Screenings.ScreeningResponse>()
                 .ForMember(dest => dest.ScreeningDateTime, opt => opt.MapFrom(src => src.Screening_Date_Time))
                 .ForMember(dest => dest.MovieId, opt => opt.MapFrom(src => src.Movie_Id))
                 .ForMember(dest => dest.HallId, opt => opt.MapFrom(src => src.Hall_Id))

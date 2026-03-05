@@ -20,7 +20,7 @@ namespace MoviesAPI.Controllers
         private readonly IEmailService _emailService;
         private readonly IJwtService _jwtService;
         private readonly IMapper _mapper;
-        private readonly IValidator<LoginRequest> _loginValidator;
+        private readonly IValidator<MoviesAPI.Application.DTOs.Requests.Users.LoginRequest> _loginValidator;
         private readonly IValidator<RegisterUserRequest> _registerValidator;
 
         public AccountController(
@@ -28,7 +28,7 @@ namespace MoviesAPI.Controllers
             IEmailService emailService, 
             IJwtService jwtService,
             IMapper mapper,
-            IValidator<LoginRequest> loginValidator,
+            IValidator<MoviesAPI.Application.DTOs.Requests.Users.LoginRequest> loginValidator,
             IValidator<RegisterUserRequest> registerValidator)
         {
             _userRepository = userRepository;
@@ -43,7 +43,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<AuthenticationResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         [ProducesResponseType(typeof(BaseResponse<object>), 401)]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] MoviesAPI.Application.DTOs.Requests.Users.LoginRequest request)
         {
             var validationResult = await _loginValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -166,7 +166,7 @@ namespace MoviesAPI.Controllers
         [HttpPost("ForgotPassword")]
         [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        public async Task<IActionResult> ForgotPassword([FromBody] MoviesAPI.Application.DTOs.Requests.Users.ForgotPasswordRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Email))
                 return BadRequest(BaseResponse<object>.Failure("Email is required"));

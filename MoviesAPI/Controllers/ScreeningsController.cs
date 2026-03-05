@@ -109,7 +109,7 @@ namespace MoviesAPI.Controllers
             };
 
             var result = await _screeningRepository.UpdateScreeningAsync(id, screening);
-            return Ok(BaseResponse<bool>.Success(result, "Screening updated successfully"));
+            return Ok(BaseResponse<int>.Success(result, "Screening updated successfully"));
         }
 
         // DELETE api/screenings/5
@@ -123,7 +123,7 @@ namespace MoviesAPI.Controllers
                 return NotFound(BaseResponse<object>.Failure("Screening not found"));
 
             var result = await _screeningRepository.DeleteScreeningAsync(id);
-            return Ok(BaseResponse<bool>.Success(result, "Screening deleted successfully"));
+            return Ok(BaseResponse<int>.Success(result, "Screening deleted successfully"));
         }
 
         // GET: api/screenings/1/reservedseats

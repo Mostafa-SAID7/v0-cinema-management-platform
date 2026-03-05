@@ -10,7 +10,7 @@ namespace MoviesAPI.Application.Mappings
         public TicketProfile()
         {
             // Entity to Response
-            CreateMap<Ticket, TicketResponse>()
+            CreateMap<Ticket, MoviesAPI.Application.DTOs.Responses.Tickets.TicketResponse>()
                 .ForMember(dest => dest.WatchDateTime, opt => opt.MapFrom(src => src.Watch_Movie))
                 .ForMember(dest => dest.MovieId, opt => opt.MapFrom(src => src.Movie_Id))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.User_Id))

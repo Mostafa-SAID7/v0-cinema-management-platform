@@ -186,7 +186,7 @@ namespace MoviesAPI.Controllers
             if (rating == null)
                 return NotFound(BaseResponse<object>.Failure("Rating not found"));
 
-            return Ok(BaseResponse<int>.Success(rating.Value));
+            return Ok(BaseResponse<int>.Success(rating.Rating));
         }
 
         // GET: /api/movies/toprated/4

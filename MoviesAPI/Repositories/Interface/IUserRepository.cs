@@ -17,6 +17,7 @@ namespace MoviesAPI.Repositories.Interface
         Task<bool> IsEmailTakenAsync(string email);
         Task<User> GetUserByEmailAsync(string email);
         Task<bool> UpdateUserPasswordAsync(int userId, string newPassword);
+        Task<int> UpdateUserRoleAsync(int userId, string role);
 
     }
 

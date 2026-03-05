@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesAPI.Models.System;
 using MoviesAPI.Repositories.Interface;
@@ -15,11 +14,13 @@ namespace MoviesAPI.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
+        private readonly IJwtService _jwtService;
 
-        public AccountController(IUserRepository userRepository,IEmailService emailService)
+        public AccountController(IUserRepository userRepository, IEmailService emailService, IJwtService jwtService)
         {
             _userRepository = userRepository;
             _emailService = emailService;
+            _jwtService = jwtService;
         }
 
         [HttpPost("Login")]
@@ -33,11 +34,8 @@ namespace MoviesAPI.Controllers
             if (user == null)
                 return Unauthorized("Invalid username or password");
 
-
-
-
-            // Add laterr: For now, just returning a simple token (can be replaced with JWT)
-            var token = Guid.NewGuid().ToString();
+            // Generate JWT token
+            var token = _jwtService.GenerateToken(user);
 
             var response = new LoginResponse
             {
@@ -46,16 +44,12 @@ namespace MoviesAPI.Controllers
                 Error = null
             };
 
-          
-            //System.Diagnostics.Debug.WriteLine("first name:" + response.User.Name);
-            //System.Diagnostics.Debug.WriteLine("last name:" + response.User.IsActive);
-
-
             return Ok(response);
         }
 
 
         [HttpPost("Logout")]
+        [Authorize]
         public async Task<IActionResult> Logout([FromBody] string username)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -81,12 +75,26 @@ namespace MoviesAPI.Controllers
 
             var existingUser = await _userRepository.GetUserByUsername(request.Username);
             if (existingUser != null)
-                return Conflict("Username already exists");
+                return Conflict(new { message = "Username already exists" });
 
+            // For development: Create user immediately without email confirmation
+            // In production, you would send email confirmation
+            request.isActive = true;
+            request.EmailConfirmed = true;
+            
+            try
+            {
+                var userId = await _userRepository.CreateUserAsync(request);
+                return Ok(new { message = "Registration successful! You can now log in." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error creating user", error = ex.Message });
+            }
+
+            /* Original email confirmation flow - commented out for development
             var token = Guid.NewGuid().ToString();
-
             var confirmationLink = $"{Request.Scheme}://{Request.Host}/api/Account/ConfirmEmail?token={token}";
-
             TempRegistrationStore.Add(token, request);
 
             var emailMessage = new EmailMessage
@@ -107,8 +115,8 @@ namespace MoviesAPI.Controllers
             emailMessage.Content = sb.ToString();
 
             await _emailService.SendEmailAsync(emailMessage);
-
             return Ok(new { message = "Confirmation email sent. Please check your email to complete registration." });
+            */
         }
 
         public static class TempRegistrationStore

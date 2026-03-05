@@ -59,8 +59,8 @@ namespace MoviesAPI.Repositories.Implementation
 
             string sql = @"
                     INSERT INTO users(name, phone, username, password, email, active,emailconfirmed) 
-                    VALUES(@Name, @Phone, @Username, @Password, @Email, @IsActive, @EmailConfirmed) 
-                    RETURNING id;
+                    VALUES(@Name, @Phone, @Username, @Password, @Email, @IsActive, @EmailConfirmed);
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);
                 ";
             var id = await conn.ExecuteScalarAsync<int>(sql, user);
             return id;
@@ -98,7 +98,7 @@ namespace MoviesAPI.Repositories.Implementation
         {
             using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
-            string sql = @"SELECT id, name, phone, username, password,active AS ""IsActive"", role
+            string sql = @"SELECT id, name, phone, username, password, email, emailconfirmed AS ""EmailConfirmed"", active AS ""IsActive"", role
                          FROM users
                          WHERE username = @username AND password = @password";
 
@@ -107,7 +107,7 @@ namespace MoviesAPI.Repositories.Implementation
             if (user == null)
                 return null;
 
-            string updateSql = @"UPDATE users SET active = true WHERE username = @username";
+            string updateSql = @"UPDATE users SET active = 1 WHERE username = @username";
             await conn.ExecuteAsync(updateSql, new { username });
 
 
@@ -118,7 +118,7 @@ namespace MoviesAPI.Repositories.Implementation
         {
             using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
-            string sql = @"UPDATE users SET active = false WHERE username = @username";
+            string sql = @"UPDATE users SET active = 0 WHERE username = @username";
             int rowsAffected = await conn.ExecuteAsync(sql, new { username });
 
             return rowsAffected > 0;
@@ -154,6 +154,17 @@ namespace MoviesAPI.Repositories.Implementation
 
             int rowsAffected = await conn.ExecuteAsync(sql, new { Password = newPassword, UserId = userId });
             return rowsAffected > 0;
+        }
+
+        public async Task<int> UpdateUserRoleAsync(int userId, string role)
+        {
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
+
+            string sql = @"UPDATE users
+                   SET role = @Role
+                   WHERE id = @UserId";
+
+            return await conn.ExecuteAsync(sql, new { Role = role, UserId = userId });
         }
 
 

@@ -29,6 +29,9 @@ namespace MoviesAPI.Models.System
         public bool IsActive { get; set; }
         [Required]
         public string Role { get; set; }
+
+        // Computed property to check if user is admin
+        public bool IsAdmin => Role?.Equals("Admin", StringComparison.OrdinalIgnoreCase) == true;
     }
 
     public class CreateUser

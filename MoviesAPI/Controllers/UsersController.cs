@@ -82,5 +82,41 @@ namespace MoviesAPI.Controllers
             var result = await _userRepository.DeleteUserAsync(id);
             return Ok(result);
         }
+
+        // PUT api/users/5/role
+        [HttpPut("{id}/role")]
+        public async Task<IActionResult> UpdateUserRole(int id, [FromBody] UpdateRoleRequest request)
+        {
+            var existing = await _userRepository.GetUserAsync(id);
+            if (existing == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Role))
+            {
+                return BadRequest(new { message = "Role is required" });
+            }
+
+            // Validate role
+            if (request.Role != "User" && request.Role != "Admin")
+            {
+                return BadRequest(new { message = "Invalid role. Must be 'User' or 'Admin'" });
+            }
+
+            var result = await _userRepository.UpdateUserRoleAsync(id, request.Role);
+            
+            if (result > 0)
+            {
+                return Ok(new { message = "User role updated successfully" });
+            }
+
+            return StatusCode(500, new { message = "Failed to update user role" });
+        }
+    }
+
+    public class UpdateRoleRequest
+    {
+        public string Role { get; set; }
     }
 }

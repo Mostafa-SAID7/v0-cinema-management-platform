@@ -122,19 +122,23 @@ namespace MoviesAPI.Repositories.Implementation
             {
                 string movieSql = @"
             INSERT INTO movie(name, duration, release_date, amount, poster_path, plot, actors, directors)
-            VALUES(@Name, @Duration, @Release_Date, @Amount, @Poster_Path, @Plot, @Actors, @Directors)
-            RETURNING id;";
+            VALUES(@Name, @Duration, @Release_Date, @Amount, @Poster_Path, @Plot, @Actors, @Directors);
+            SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                 var movieId = await conn.ExecuteScalarAsync<int>(movieSql, movie, transaction);
 
-                string genreIdSql = "SELECT id FROM genres WHERE name = ANY(@Names);";
-                var genreIds = (await conn.QueryAsync<int>(genreIdSql, new { Names = movie.Genres }, transaction)).ToList();
-
+                // Get genre IDs for each genre name
                 string genreSql = "INSERT INTO moviegenres(movieid, genreid) VALUES(@MovieId, @GenreId);";
 
-                foreach (var genreId in genreIds)
+                foreach (var genreName in movie.Genres)
                 {
-                    await conn.ExecuteAsync(genreSql, new { MovieId = movieId, GenreId = genreId }, transaction);
+                    string genreIdSql = "SELECT id FROM genres WHERE name = @Name;";
+                    var genreId = await conn.ExecuteScalarAsync<int?>(genreIdSql, new { Name = genreName }, transaction);
+                    
+                    if (genreId.HasValue)
+                    {
+                        await conn.ExecuteAsync(genreSql, new { MovieId = movieId, GenreId = genreId.Value }, transaction);
+                    }
                 }
 
                 await transaction.CommitAsync();
@@ -261,8 +265,8 @@ namespace MoviesAPI.Repositories.Implementation
 
             string sql = @"
             INSERT INTO futuremovies (name, genres, poster_path)
-            VALUES(@Name,@Genres, @Poster_Path)
-            RETURNING id;";
+            VALUES(@Name,@Genres, @Poster_Path);
+            SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var movieId = await conn.ExecuteScalarAsync<int>(sql, new
             {
@@ -314,19 +318,22 @@ namespace MoviesAPI.Repositories.Implementation
                 WITH movie_stats AS (
                     SELECT 
                         COUNT(r.rating) AS rating_count,
-                        AVG(r.rating) AS avg_rating
+                        ISNULL(AVG(r.rating), 0) AS avg_rating
                     FROM movieratings r
                     WHERE r.movie_id = @MovieId
                 ),
                 global_avg AS (
-                    SELECT AVG(rating) AS C FROM movieratings
+                    SELECT ISNULL(AVG(rating), 0) AS C FROM movieratings
                 ),
                 user_count AS (
                     SELECT COUNT(*) AS total_users FROM users
                 )
                 SELECT 
-                    ((ms.rating_count::float / (ms.rating_count + uc.total_users * 0.55)) * ms.avg_rating
-                     + ((uc.total_users * 0.55) / (ms.rating_count + uc.total_users * 0.55)) * ga.C) AS weighted_rating
+                    CASE 
+                        WHEN ms.rating_count = 0 OR uc.total_users = 0 THEN 0
+                        ELSE ((CAST(ms.rating_count AS FLOAT) / (ms.rating_count + uc.total_users * 0.55)) * ms.avg_rating
+                             + ((uc.total_users * 0.55) / (ms.rating_count + uc.total_users * 0.55)) * ga.C)
+                    END AS weighted_rating
                 FROM movie_stats ms
                 CROSS JOIN global_avg ga
                 CROSS JOIN user_count uc;
@@ -395,26 +402,28 @@ namespace MoviesAPI.Repositories.Implementation
                     SELECT 
                         m.*,
                         COUNT(r.rating) AS rating_count,
-                        AVG(r.rating) AS avg_rating
+                        ISNULL(AVG(r.rating), 0) AS avg_rating
                     FROM movie m
                     LEFT JOIN movieratings r ON m.id = r.movie_id
-                    GROUP BY m.id
+                    GROUP BY m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors
                 ),
                 global_avg AS (
-                    SELECT AVG(rating) AS C FROM movieratings
+                    SELECT ISNULL(AVG(rating), 0) AS C FROM movieratings
                 ),
                 user_count AS (
                     SELECT COUNT(*) AS total_users FROM users
                 )
-                SELECT 
+                SELECT TOP (@Limit)
                     ms.*,
-                    ((ms.rating_count::float / (ms.rating_count + uc.total_users * 0.55)) * ms.avg_rating
-                     + ((uc.total_users * 0.55) / (ms.rating_count + uc.total_users * 0.55)) * ga.C) AS weighted_rating
+                    CASE 
+                        WHEN ms.rating_count = 0 OR uc.total_users = 0 THEN 0
+                        ELSE ((CAST(ms.rating_count AS FLOAT) / (ms.rating_count + uc.total_users * 0.55)) * ms.avg_rating
+                             + ((uc.total_users * 0.55) / (ms.rating_count + uc.total_users * 0.55)) * ga.C)
+                    END AS weighted_rating
                 FROM movie_stats ms
                 CROSS JOIN global_avg ga
                 CROSS JOIN user_count uc
-                ORDER BY weighted_rating DESC
-                LIMIT @Limit;
+                ORDER BY weighted_rating DESC;
             ";
 
             var movies = (await conn.QueryAsync<Movie>(sql, new { Limit = n })).ToList();

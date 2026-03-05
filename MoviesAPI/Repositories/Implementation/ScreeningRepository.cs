@@ -92,8 +92,8 @@ namespace MoviesAPI.Repositories.Implementation
 
             string sql = @"
                 INSERT INTO screening(movie_id, screening_date_time, total_tickets, available_tickets, hall_id, ticket_price)
-                VALUES (@Movie_Id, @Screening_Date_Time, @TotalTickets, @AvailableTickets, @Hall_Id, @Ticket_Price)
-                RETURNING id;
+                VALUES (@Movie_Id, @Screening_Date_Time, @TotalTickets, @AvailableTickets, @Hall_Id, @Ticket_Price);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);
              ";
 
             var id = await conn.ExecuteScalarAsync<int>(sql, new
@@ -199,8 +199,8 @@ namespace MoviesAPI.Repositories.Implementation
                 {
                     string ticketSql = @"
                     INSERT INTO ticket(movie_id, user_id, watch_movie, price, hall_seat_id)
-                    VALUES(@MovieId, @UserId, @WatchMovie, @Price, @HallSeatId)
-                    RETURNING id;";
+                    VALUES(@MovieId, @UserId, @WatchMovie, @Price, @HallSeatId);
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                     int ticketId = await conn.ExecuteScalarAsync<int>(
                         ticketSql,

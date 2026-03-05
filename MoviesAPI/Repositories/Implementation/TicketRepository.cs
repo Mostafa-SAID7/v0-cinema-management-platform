@@ -92,8 +92,8 @@ namespace MoviesAPI.Repositories.Implementation
             using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"INSERT INTO ticket(movie_id, user_id, watch_movie, price)
-                   VALUES(@Movie_Id, @User_Id, @Watch_Movie, @Price)
-                   RETURNING id;";
+                   VALUES(@Movie_Id, @User_Id, @Watch_Movie, @Price);
+                   SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var id = await conn.ExecuteScalarAsync<int>(sql, ticket);
 

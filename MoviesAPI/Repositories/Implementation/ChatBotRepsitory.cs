@@ -37,8 +37,8 @@ namespace MoviesAPI.Repositories.Implementation
         {
             using var conn = GetConnection();
             var sql = @"INSERT INTO faqs (question, answer, category, createdat, updatedAt)
-                        VALUES (@Question, @Answer, @Category, NOW(), NOW())
-                        RETURNING id;";
+                        VALUES (@Question, @Answer, @Category, GETDATE(), GETDATE());
+                        SELECT CAST(SCOPE_IDENTITY() AS INT);";
             faq.Id = await conn.ExecuteScalarAsync<int>(sql, faq);
         }
 

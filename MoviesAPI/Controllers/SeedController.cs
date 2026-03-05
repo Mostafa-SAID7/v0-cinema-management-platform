@@ -11,15 +11,18 @@ namespace MoviesAPI.Controllers
         private readonly IMovieRepository _movieRepository;
         private readonly IScreeningRepository _screeningRepository;
         private readonly IHallRepository _hallRepository;
+        private readonly IUserRepository _userRepository;
 
         public SeedController(
             IMovieRepository movieRepository,
             IScreeningRepository screeningRepository,
-            IHallRepository hallRepository)
+            IHallRepository hallRepository,
+            IUserRepository userRepository)
         {
             _movieRepository = movieRepository;
             _screeningRepository = screeningRepository;
             _hallRepository = hallRepository;
+            _userRepository = userRepository;
         }
 
         [HttpPost("movies")]
@@ -199,7 +202,14 @@ namespace MoviesAPI.Controllers
         {
             try
             {
-                // Seed movies first
+                // Seed users first
+                var usersResult = await SeedUsers();
+                if (usersResult is not OkObjectResult)
+                {
+                    return usersResult;
+                }
+
+                // Seed movies
                 var moviesResult = await SeedMovies();
                 if (moviesResult is not OkObjectResult)
                 {
@@ -215,12 +225,71 @@ namespace MoviesAPI.Controllers
 
                 return Ok(new
                 {
-                    message = "Successfully seeded all data (movies and screenings)"
+                    message = "Successfully seeded all data (users, movies and screenings)"
                 });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error seeding data", error = ex.Message });
+            }
+        }
+
+        [HttpPost("users")]
+        public async Task<IActionResult> SeedUsers()
+        {
+            try
+            {
+                // Check if users already exist
+                var existingUsers = await _userRepository.GetUsersAsync();
+                if (existingUsers.Any())
+                {
+                    return Ok(new { message = "Users already exist, skipping seed" });
+                }
+
+                var users = new List<Models.System.RegisterRequest>
+                {
+                    new Models.System.RegisterRequest
+                    {
+                        Name = "Test User",
+                        Username = "testuser",
+                        Email = "test@shoftv.com",
+                        Password = "Test123!",
+                        Phone = "+1234567890",
+                        isActive = true,
+                        EmailConfirmed = true
+                    },
+                    new Models.System.RegisterRequest
+                    {
+                        Name = "Admin User",
+                        Username = "admin",
+                        Email = "admin@shoftv.com",
+                        Password = "Admin123!",
+                        Phone = "+1234567891",
+                        isActive = true,
+                        EmailConfirmed = true
+                    }
+                };
+
+                var createdIds = new List<int>();
+                foreach (var user in users)
+                {
+                    var id = await _userRepository.CreateUserAsync(user);
+                    createdIds.Add(id);
+                }
+
+                return Ok(new
+                {
+                    message = $"Successfully seeded {createdIds.Count} users",
+                    credentials = new[]
+                    {
+                        new { username = "testuser", password = "Test123!", email = "test@shoftv.com" },
+                        new { username = "admin", password = "Admin123!", email = "admin@shoftv.com" }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error seeding users", error = ex.Message });
             }
         }
 

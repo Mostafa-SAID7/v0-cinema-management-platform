@@ -1,9 +1,9 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Extensions.Options;
 using MoviesAPI.Models;
 using MoviesAPI.Models.System;
 using MoviesAPI.Repositories.Interface;
-using Npgsql;
+using Microsoft.Data.SqlClient;
 using System.Data.Common;
 using System.Runtime;
 using System.Transactions;
@@ -21,7 +21,7 @@ namespace MoviesAPI.Repositories.Implementation
 
        public async Task<IEnumerable<Movie>> GetMoviesAsync()
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = @"SELECT m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors,
                                   string_agg(g.name, ', ') AS Genres
                            FROM movie m
@@ -44,7 +44,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<IEnumerable<Movie>> GetMoviesByGenreAsync(string genre)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = @"SELECT m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors,
                                   string_agg(g.name, ', ') AS Genres
                            FROM movie m
@@ -75,7 +75,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<Movie> GetMovieAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
            
 
             string sql = @"SELECT m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors,
@@ -102,7 +102,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<CreateAndUpdateMovie> GetMovieForUpdateAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = "SELECT name, duration, release_date, amount, poster_path, plot, actors, directors FROM movie WHERE id = @id";
 
             var updateMovie = await conn.QueryFirstOrDefaultAsync<CreateAndUpdateMovie>(sql, new { id });
@@ -112,7 +112,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> CreateMovieAsync(CreateAndUpdateMovie movie)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             await conn.OpenAsync();
 
@@ -151,7 +151,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> UpdateMovieAsync(long id, CreateAndUpdateMovie updateMovie)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             await conn.OpenAsync();
             using var transaction = await conn.BeginTransactionAsync();
 
@@ -222,7 +222,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> DeleteMovieAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = "delete from movie where id = @id";
 
@@ -232,7 +232,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<IEnumerable<FutureMovie>> GetFutureMoviesAsync()
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = "SELECT id, name, genres, poster_path FROM futuremovies ORDER BY id;";
 
@@ -245,7 +245,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<FutureMovie> GetFutureMovieAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = "SELECT id, name, genres, poster_path FROM futuremovies WHERE id = @Id;";
 
@@ -257,7 +257,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> CreateFutureMovieAsync(CreateFutureMovie movie)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"
             INSERT INTO futuremovies (name, genres, poster_path)
@@ -278,7 +278,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> DeleteFutureMovieAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = "delete from futuremovies where id = @id";
 
@@ -287,7 +287,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<List<string>> GettAllGenresAsync()
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = "SELECT name FROM genres ";
 
             var genres = await conn.QueryAsync<string>(sql);
@@ -296,7 +296,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<(decimal WeightedRating, List<MovieRating> Ratings)> GetRatingsForMovieAsync(long movieId)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string ratingsSql = @"
                 SELECT r.id AS Id, r.user_id AS UserId, r.movie_id AS MovieId, r.rating AS Rating, r.comment AS Comment,
@@ -343,7 +343,7 @@ namespace MoviesAPI.Repositories.Implementation
         public async Task<MovieRating?> GetRatingOfUserForMovieAsync(long movieId, long userId)
         {
 
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"
                 SELECT r.id AS Id, r.user_id AS UserId, r.movie_id AS MovieId, r.rating AS Rating, r.comment AS Comment,
@@ -364,7 +364,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<bool> UpsertRating(CreateRating rating)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
                     string sql = @"
                 INSERT INTO movieratings (movie_id, user_id, rating,comment)
@@ -388,7 +388,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<List<Movie>> GetTopNMoviesAsync(int n)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"
                 WITH movie_stats AS (

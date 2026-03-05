@@ -2,6 +2,6 @@
 {
     public class DBSettings
     {
-        public string PostgresDB { get; set; }
+        public string SqlServerDB { get; set; }
     }
 }

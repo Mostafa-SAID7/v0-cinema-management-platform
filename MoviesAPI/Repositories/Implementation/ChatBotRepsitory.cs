@@ -1,9 +1,9 @@
-﻿using Dapper;
+using Dapper;
 using MoviesAPI.Models;
 using MoviesAPI.Models.System;
 using MoviesAPI.Repositories.Interface;
 using Microsoft.Extensions.Options;
-using Npgsql;
+using Microsoft.Data.SqlClient;
 
 namespace MoviesAPI.Repositories.Implementation
 {
@@ -16,7 +16,7 @@ namespace MoviesAPI.Repositories.Implementation
             _dbSettings = dbSettings.Value;
         }
 
-        private NpgsqlConnection GetConnection() => new NpgsqlConnection(_dbSettings.PostgresDB);
+        private SqlConnection GetConnection() => new SqlConnection(_dbSettings.SqlServerDB);
 
         public async Task<List<Faq>> GetAllFaqAsync()
         {

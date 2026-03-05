@@ -12,6 +12,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader());
+});
+
 // Bind DBSettings from appsettings.json
 builder.Services.Configure<DBSettings>(builder.Configuration.GetSection("DBSettings"));
 
@@ -22,6 +30,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IScreeningRepository, ScreeningRepository>();
 builder.Services.AddScoped<IHallRepository, HallRepository>();
 builder.Services.AddScoped<IChatBotRepository, ChatBotRepository>();
+
 
 
 builder.Services.AddScoped<IOpenAIService,OpenAIService>();
@@ -44,9 +53,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("AllowAll");
+
 app.UseResponseCaching();
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseAuthentication();
 

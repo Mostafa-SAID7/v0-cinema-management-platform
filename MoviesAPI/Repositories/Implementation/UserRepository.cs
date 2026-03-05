@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using MoviesAPI.Models.System;
 using MoviesAPI.Repositories.Interface;
-using Npgsql;
+using Microsoft.Data.SqlClient;
 
 namespace MoviesAPI.Repositories.Implementation
 {
@@ -18,7 +18,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<IEnumerable<User>> GetUsersAsync()
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = "SELECT id, name, phone, username, password,email,active,role FROM users";
 
             var result = await conn.QueryAsync<User>(sql);
@@ -27,7 +27,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<User> GetUserAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = "SELECT id, name, phone, username, password,email,active,role FROM users WHERE id = @id";
 
             var user = await conn.QueryFirstOrDefaultAsync<User>(sql, new { id });
@@ -36,7 +36,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<User> GetUserByUsername(string username)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = "SELECT id, name, phone, username, password,email,active,role FROM users WHERE username = @username";
 
             var user = await conn.QueryFirstOrDefaultAsync<User>(sql, new { username });
@@ -45,7 +45,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<UserProfile> GetUserForUpdateAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = "SELECT name, phone, username FROM users WHERE id = @id";
 
             var updateUser = await conn.QueryFirstOrDefaultAsync<UserProfile>(sql, new { id });
@@ -55,7 +55,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> CreateUserAsync(RegisterRequest user)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"
                     INSERT INTO users(name, phone, username, password, email, active,emailconfirmed) 
@@ -69,7 +69,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> UpdateUserAsync( UserProfile updateUser)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"UPDATE users
                    SET name = @Name,
@@ -86,7 +86,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> DeleteUserAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = "delete from users where id = @id";
 
@@ -96,7 +96,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<User> GetUserByUsernameAndPassword(string username, string password)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"SELECT id, name, phone, username, password,active AS ""IsActive"", role
                          FROM users
@@ -116,7 +116,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<bool> LogoutUser(string username)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"UPDATE users SET active = false WHERE username = @username";
             int rowsAffected = await conn.ExecuteAsync(sql, new { username });
@@ -126,7 +126,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<bool> IsEmailTakenAsync(string email)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = "SELECT COUNT(1) FROM users WHERE email = @Email;";
             var count = await conn.ExecuteScalarAsync<int>(sql, new { Email = email });
             return count > 0;
@@ -134,7 +134,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<User> GetUserByEmailAsync(string email)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"SELECT id, name, phone, username, password, email, active AS ""IsActive"", role
                    FROM users
@@ -146,7 +146,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<bool> UpdateUserPasswordAsync(int userId, string newPassword)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"UPDATE users
                    SET password = @Password

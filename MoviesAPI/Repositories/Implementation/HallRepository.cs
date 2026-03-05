@@ -1,9 +1,9 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Extensions.Options;
 using MoviesAPI.Models;
 using MoviesAPI.Models.System;
 using MoviesAPI.Repositories.Interface;
-using Npgsql;
+using Microsoft.Data.SqlClient;
 
 namespace MoviesAPI.Repositories.Implementation
 {
@@ -18,7 +18,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<List<HallDto>> GetAllHallsAsync()
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = @"
                     SELECT 
                         h.id AS Id, 
@@ -67,7 +67,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<HallDto> GetHallByIdAsync(int hallId)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"
                 SELECT h.id, h.name,
@@ -110,7 +110,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<List<HallSeatDto>> GetSeatsByHallIdAsync(int hallId)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"
                 SELECT id AS SeatId, hall_id AS HallId, row_number AS RowNumber,seat_number AS SeatNumber

@@ -1,9 +1,9 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Extensions.Options;
 using MoviesAPI.Models;
 using MoviesAPI.Models.System;
 using MoviesAPI.Repositories.Interface;
-using Npgsql;
+using Microsoft.Data.SqlClient;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MoviesAPI.Repositories.Implementation
@@ -19,7 +19,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<IEnumerable<TicketResponse>> GetTicketsAsync()
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
           
 
             string sql = @"SELECT 
@@ -55,7 +55,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<TicketResponse> GetTicketAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = @"SELECT 
                         t.id, 
                         m.name AS moviename,
@@ -79,7 +79,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         //public async Task<UpdateTicket> GetTicketForUpdateAsync(long id)
         //{
-        //    using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+        //    using var conn = new SqlConnection(_dbSettings.SqlServerDB);
         //    string sql = "SELECT watch_movie, amount FROM ticket WHERE id = @id";
 
         //    var updateTicket = await conn.QueryFirstOrDefaultAsync<UpdateTicket>(sql, new { id });
@@ -89,7 +89,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> CreateTicketAsync(CreateTicket ticket)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"INSERT INTO ticket(movie_id, user_id, watch_movie, price)
                    VALUES(@Movie_Id, @User_Id, @Watch_Movie, @Price)
@@ -102,7 +102,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         //public async Task<int> UpdateTicketAsync(long id, UpdateTicket updateTicket)
         //{
-        //    using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+        //    using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
         //    string sql = @"UPDATE ticket
         //           SET watch_movie = @Watch_Movie,
@@ -119,7 +119,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> DeleteTicketAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = "DELETE FROM ticket WHERE id = @id";
 
@@ -129,7 +129,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> GetPurchasedTicketsAsync(long movieId, DateTime showTime)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             var sql = @"
                 SELECT COUNT(*) 
                 FROM ticket 

@@ -1,9 +1,9 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Extensions.Options;
 using MoviesAPI.Models;
 using MoviesAPI.Models.System;
 using MoviesAPI.Repositories.Interface;
-using Npgsql;
+using Microsoft.Data.SqlClient;
 using System.Net.Sockets;
 
 namespace MoviesAPI.Repositories.Implementation
@@ -19,7 +19,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<IEnumerable<ScreeningResponse>> GetScreeningsAsync()
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = @"SELECT 
                         s.id,
                         s.movie_id, 
@@ -38,7 +38,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<ScreeningResponse> GetScreeningAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = @"
                 SELECT 
                     s.id,
@@ -70,7 +70,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<Screening> GetScreeningForUpdateAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             string sql = "SELECT id, movie_id, screening_date_time, total_tickets, available_tickets FROM screening WHERE id = @id";
 
             var updateScreening = await conn.QueryFirstOrDefaultAsync<Screening>(sql, new { id });
@@ -80,7 +80,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> CreateScreeningAsync(CreateScreening screening)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             var numRowAndSeatSql = "SELECT rows,seats_per_row FROM hall WHERE id = @HallId;";
             var numRowAndSeat = await conn.QueryFirstOrDefaultAsync<(int rows, int seats_per_row)>(numRowAndSeatSql, new { HallId = screening.Hall_Id });
@@ -113,7 +113,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> UpdateScreeningAsync(long id, UpdateScreening screening)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"UPDATE screening
                    SET movie_id = @Movie_Id,
@@ -134,7 +134,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<int> DeleteScreeningAsync(long id)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = "delete from screening where id = @id";
 
@@ -144,7 +144,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<List<SeatForScreeningDto>> GetReservedSeatsAsync(long screeningId)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"
                 SELECT sfs.id AS Id, sfs.screening_id AS ScreeningId, 
@@ -163,7 +163,7 @@ namespace MoviesAPI.Repositories.Implementation
         public async Task BookSeatsAsync(long screeningId, string username, List<int> hallSeatIds)
         {
 
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
             await conn.OpenAsync();
 
             using var transaction = await conn.BeginTransactionAsync();
@@ -243,7 +243,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<List<Screening>> GetScreeningsByHallAndDateAsync(int hall_id,DateOnly date)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"
                 SELECT *
@@ -263,7 +263,7 @@ namespace MoviesAPI.Repositories.Implementation
 
         public async Task<List<Screening>> GetScreeningsByDateAsync(DateOnly date)
         {
-            using var conn = new NpgsqlConnection(_dbSettings.PostgresDB);
+            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
 
             string sql = @"
                 SELECT *

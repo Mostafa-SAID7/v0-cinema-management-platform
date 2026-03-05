@@ -1,13 +1,15 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { BookingService } from '../../../services/booking.service';
+import { ToastService } from '../../../services/toast.service';
+import { EmptyStateComponent } from '../../ui/empty-state.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, EmptyStateComponent],
   template: `
     <div class="p-6 md:p-8 space-y-8">
       <!-- Header -->
@@ -161,11 +163,20 @@ import { BookingService } from '../../../services/booking.service';
     </div>
   `,
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private bookingService = inject(BookingService);
+  private toastService = inject(ToastService);
 
   protected authService_export = this.authService;
+
+  ngOnInit(): void {
+    // Show welcome toast
+    const user = this.authService.getCurrentUser();
+    if (user) {
+      this.toastService.success(`Welcome back, ${user.name}!`);
+    }
+  }
 
   activeTab = signal<'upcoming' | 'past'>('upcoming');
 

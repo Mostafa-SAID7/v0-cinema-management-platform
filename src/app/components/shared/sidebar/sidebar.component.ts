@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { authSignal } from '../../../signals/auth.signal';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -59,17 +59,18 @@ import { authSignal } from '../../../signals/auth.signal';
       <!-- User Section -->
       <div class="border-t border-border">
         <!-- User Info (if logged in) -->
-        <div *ngIf="authSignal().isAuthenticated && authSignal().user" class="px-4 py-4 space-y-3">
+        <div *ngIf="isAuthenticated()" class="px-4 py-4 space-y-3">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              {{ getInitials(authSignal().user!.name) }}
+              {{ getInitials(currentUser()?.name || 'User') }}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-medium text-foreground truncate">{{ authSignal().user!.name }}</p>
-              <p class="text-xs text-muted-foreground truncate">{{ authSignal().user!.email }}</p>
+              <p class="font-medium text-foreground truncate">{{ currentUser()?.name || 'User' }}</p>
+              <p class="text-xs text-muted-foreground truncate">{{ currentUser()?.email || 'user@example.com' }}</p>
             </div>
           </div>
           <button
+            (click)="logout()"
             class="w-full px-4 py-2 rounded-lg border border-border text-foreground hover:bg-secondary transition-smooth text-sm font-medium"
           >
             Logout
@@ -77,7 +78,7 @@ import { authSignal } from '../../../signals/auth.signal';
         </div>
 
         <!-- Sign In (if not logged in) -->
-        <div *ngIf="!authSignal().isAuthenticated" class="px-4 py-4">
+        <div *ngIf="!isAuthenticated()" class="px-4 py-4">
           <button
             class="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-smooth neon-glow text-sm"
           >
@@ -96,7 +97,10 @@ import { authSignal } from '../../../signals/auth.signal';
   `,
 })
 export class SidebarComponent {
-  authSignal = inject(() => authSignal());
+  private authService = inject(AuthService);
+
+  isAuthenticated = computed(() => this.authService.isAuthenticated());
+  currentUser = computed(() => this.authService.getCurrentUser());
 
   getInitials(name: string): string {
     return name
@@ -105,5 +109,9 @@ export class SidebarComponent {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  }
+
+  logout(): void {
+    this.authService.logout();
   }
 }

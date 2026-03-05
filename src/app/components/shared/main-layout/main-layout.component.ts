@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { NavbarComponent } from '../navbar/navbar.component';
+import { ToastContainerComponent } from '../../ui/toast-container.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent, ToastContainerComponent],
   template: `
     <div class="flex h-screen bg-background">
       <!-- Desktop Sidebar -->
@@ -40,6 +41,9 @@ import { NavbarComponent } from '../navbar/navbar.component';
           <app-sidebar></app-sidebar>
         </aside>
       </div>
+
+      <!-- Toast Container -->
+      <app-toast-container></app-toast-container>
     </div>
   `,
   styles: [

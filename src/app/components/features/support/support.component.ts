@@ -1,10 +1,13 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ToastService } from '../../../services/toast.service';
+import { InputComponent } from '../../ui/input.component';
 
 @Component({
   selector: 'app-support',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, InputComponent],
   template: `
     <div class="p-6 md:p-8 space-y-8">
       <!-- Header -->
@@ -115,7 +118,7 @@ import { CommonModule } from '@angular/common';
                   placeholder="Ask me anything..."
                   class="w-full px-3 py-2 rounded-lg bg-secondary text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
-                <button class="w-full px-3 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-smooth">
+                <button (click)="sendMessage()" class="w-full px-3 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-smooth">
                   Send
                 </button>
               </div>
@@ -126,9 +129,15 @@ import { CommonModule } from '@angular/common';
     </div>
   `,
 })
-export class SupportComponent {
+export class SupportComponent implements OnInit {
+  private toastService = inject(ToastService);
+
   expandedFaq = signal(-1);
   cinemaBotOpen = signal(false);
+
+  ngOnInit(): void {
+    this.toastService.info('Welcome to CinemaVerse Support. How can we help you?');
+  }
 
   faqs = [
     {
@@ -164,5 +173,9 @@ export class SupportComponent {
 
   toggleCinemaBot(): void {
     this.cinemaBotOpen.update((open) => !open);
+  }
+
+  sendMessage(): void {
+    this.toastService.success('Message sent! We\'ll get back to you within 24 hours.');
   }
 }

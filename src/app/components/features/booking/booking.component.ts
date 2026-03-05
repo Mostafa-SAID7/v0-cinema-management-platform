@@ -1,10 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-booking',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="p-6 md:p-8">
       <h1 class="text-4xl font-bold text-foreground mb-8">Select Your Seats</h1>
@@ -111,15 +113,17 @@ import { CommonModule } from '@angular/common';
 
             <button
               [disabled]="selectedSeats().length === 0"
+              (click)="confirmBooking()"
               class="w-full px-4 py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:bg-primary/90 neon-glow transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Proceed to Payment
             </button>
 
             <button
+              (click)="resetBooking()"
               class="w-full px-4 py-2 rounded-lg border border-border text-foreground hover:bg-secondary transition-smooth"
             >
-              Continue Shopping
+              Clear Selection
             </button>
           </div>
         </div>
@@ -127,9 +131,15 @@ import { CommonModule } from '@angular/common';
     </div>
   `,
 })
-export class BookingComponent {
+export class BookingComponent implements OnInit {
+  private toastService = inject(ToastService);
+
   selectedShowtime = signal(-1);
   selectedSeats = signal<string[]>([]);
+
+  ngOnInit(): void {
+    this.toastService.info('Select a showtime and click seats to book your ticket');
+  }
 
   showtimes = ['10:00 AM', '1:30 PM', '4:45 PM', '7:30 PM', '10:15 PM'];
 
@@ -167,5 +177,20 @@ export class BookingComponent {
   isOccupied(rowIndex: number, seatIndex: number): boolean {
     const seatId = `${this.rowLabels[rowIndex]}${seatIndex + 1}`;
     return this.occupiedSeats.has(seatId);
+  }
+
+  confirmBooking(): void {
+    const seatCount = this.selectedSeats().length;
+    const totalPrice = seatCount * 250;
+    const showtime = this.showtimes[this.selectedShowtime()];
+
+    this.toastService.success(
+      `Booking confirmed! ${seatCount} seat(s) for ₹${totalPrice} at ${showtime}. Proceeding to payment...`
+    );
+  }
+
+  resetBooking(): void {
+    this.selectedSeats.set([]);
+    this.toastService.info('Selection cleared');
   }
 }

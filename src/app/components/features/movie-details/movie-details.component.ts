@@ -2,11 +2,14 @@ import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MovieService } from '../../../services/movie.service';
+import { ToastService } from '../../../services/toast.service';
+import { SkeletonCardComponent } from '../../ui/skeleton-card.component';
+import { ErrorPageComponent } from '../../pages/error-page.component';
 
 @Component({
   selector: 'app-movie-details',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, SkeletonCardComponent, ErrorPageComponent],
   template: `
     <div class="bg-background">
       <div *ngIf="movie(); let m = movie()">
@@ -159,15 +162,25 @@ import { MovieService } from '../../../services/movie.service';
       <div *ngIf="!movie()" class="h-96 flex items-center justify-center">
         <p class="text-muted-foreground">Loading movie details...</p>
       </div>
+
+      <!-- Error State -->
+      <app-error-page
+        *ngIf="movieError()"
+        statusCode="404"
+        title="Movie Not Found"
+        message="The movie you're looking for doesn't exist or has been removed."
+      ></app-error-page>
     </div>
   `,
 })
 export class MovieDetailsComponent {
   private movieService = inject(MovieService);
   private route = inject(ActivatedRoute);
+  private toastService = inject(ToastService);
 
   movieId = this.route.snapshot.paramMap.get('id');
   movie = computed(() => (this.movieId ? this.movieService.getMovieById(this.movieId) : undefined));
+  movieError = computed(() => this.movieId && !this.movie());
 
   getCastMembers(): string[] {
     return ['Actor 1', 'Actor 2', 'Actor 3', 'Actor 4', 'Actor 5', 'Actor 6'];

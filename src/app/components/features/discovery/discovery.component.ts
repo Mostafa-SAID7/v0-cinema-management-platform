@@ -1,13 +1,16 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MovieService } from '../../../services/movie.service';
+import { ToastService } from '../../../services/toast.service';
 import { InputComponent } from '../../ui/input.component';
+import { SkeletonCardComponent } from '../../ui/skeleton-card.component';
+import { EmptyStateComponent } from '../../ui/empty-state.component';
 
 @Component({
   selector: 'app-discovery',
   standalone: true,
-  imports: [CommonModule, RouterModule, InputComponent],
+  imports: [CommonModule, RouterModule, InputComponent, SkeletonCardComponent, EmptyStateComponent],
   template: `
     <div class="space-y-8">
       <!-- Hero Section with Search -->
@@ -64,7 +67,12 @@ import { InputComponent } from '../../ui/input.component';
       <!-- Trending Now Carousel -->
       <section class="px-6 md:px-8 space-y-4">
         <h2 class="text-2xl font-bold text-foreground">Trending Now</h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <!-- Loading State -->
+        <div *ngIf="isLoading()" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <app-skeleton-card *ngFor="let i of [1,2,3,4,5,6,7,8]"></app-skeleton-card>
+        </div>
+        <!-- Content -->
+        <div *ngIf="!isLoading()" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <a
             *ngFor="let movie of trendingMovies()"
             [routerLink]="['/movie', movie.id]"
@@ -103,6 +111,7 @@ import { InputComponent } from '../../ui/input.component';
             </div>
           </a>
         </div>
+        </div>
       </section>
 
       <!-- Genre Filter -->
@@ -137,12 +146,13 @@ import { InputComponent } from '../../ui/input.component';
       <!-- Filtered Movies Grid -->
       <section *ngIf="selectedGenre()" class="px-6 md:px-8 space-y-4">
         <h2 class="text-2xl font-bold text-foreground">{{ selectedGenre() }} Movies</h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <a
-            *ngFor="let movie of genreMovies()"
-            [routerLink]="['/movie', movie.id]"
-            class="group cursor-pointer"
-          >
+        <ng-container *ngIf="genreMovies().length > 0; else noGenreMovies">
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <a
+              *ngFor="let movie of genreMovies()"
+              [routerLink]="['/movie', movie.id]"
+              class="group cursor-pointer"
+            >
             <div
               class="aspect-video bg-secondary rounded-lg overflow-hidden glassmorphism hover:neon-glow group-hover:scale-105 transition-smooth relative"
             >
@@ -207,11 +217,20 @@ import { InputComponent } from '../../ui/input.component';
     </div>
   `,
 })
-export class DiscoveryComponent {
+export class DiscoveryComponent implements OnInit {
   private movieService = inject(MovieService);
+  private toastService = inject(ToastService);
 
   searchQuery = signal('');
   selectedGenre = signal('');
+  isLoading = signal(true);
+
+  ngOnInit(): void {
+    // Simulate loading
+    setTimeout(() => {
+      this.isLoading.set(false);
+    }, 800);
+  }
 
   trendingMovies = this.movieService.trendingMovies;
   upcomingMovies = this.movieService.upcomingMovies;

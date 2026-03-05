@@ -12,7 +12,7 @@ import { ErrorPageComponent } from '../../pages/error-page.component';
   imports: [CommonModule, RouterModule, SkeletonCardComponent, ErrorPageComponent],
   template: `
     <div class="bg-background">
-      <div *ngIf="movie(); let m = movie()">
+      <div *ngIf="movie() as m">
         <!-- Hero Section -->
         <div class="relative h-80 md:h-[500px] bg-gradient-to-b from-primary/20 to-background overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background"></div>
@@ -177,7 +177,7 @@ import { ErrorPageComponent } from '../../pages/error-page.component';
       <!-- Error State -->
       <app-error-page
         *ngIf="movieError()"
-        statusCode="404"
+        [statusCode]="404"
         title="Movie Not Found"
         message="The movie you're looking for doesn't exist or has been removed."
       ></app-error-page>

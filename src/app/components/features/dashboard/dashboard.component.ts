@@ -13,7 +13,7 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
   template: `
     <div class="p-6 md:p-8 space-y-8">
       <!-- Header -->
-      <div *ngIf="authService.getCurrentUser(); let user = authService.getCurrentUser()" class="space-y-2">
+      <div *ngIf="authService.getCurrentUser() as user" class="space-y-2">
         <h1 class="text-4xl font-bold text-foreground">Welcome, {{ user.name }}!</h1>
         <p class="text-muted-foreground">Manage your tickets, bookings, and account preferences</p>
       </div>
@@ -191,6 +191,7 @@ export class DashboardComponent implements OnInit {
       time: '7:30 PM',
       seats: 'A5, A6, A7',
       totalPrice: 750,
+      action: 'View Ticket',
     },
     {
       id: '67890def',
@@ -199,12 +200,29 @@ export class DashboardComponent implements OnInit {
       time: '4:45 PM',
       seats: 'B3, B4',
       totalPrice: 500,
+      action: 'View Ticket',
     },
   ];
 
   pastBookings = [
-    { title: 'Love in Paradise', date: 'Dec 10, 2024', time: '6:00 PM', seats: 'D2, D3', action: 'Rebook' },
-    { title: 'Action Adventure', date: 'Nov 28, 2024', time: '8:30 PM', seats: 'E5', action: 'Rate' },
+    {
+      id: 'past1',
+      title: 'Love in Paradise',
+      date: 'Dec 10, 2024',
+      time: '6:00 PM',
+      seats: 'D2, D3',
+      totalPrice: 450,
+      action: 'Rebook',
+    },
+    {
+      id: 'past2',
+      title: 'Action Adventure',
+      date: 'Nov 28, 2024',
+      time: '8:30 PM',
+      seats: 'E5',
+      totalPrice: 250,
+      action: 'Rate',
+    },
   ];
 
   favoriteMovies = [

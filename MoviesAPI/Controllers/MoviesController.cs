@@ -96,12 +96,12 @@ namespace MoviesAPI.Controllers
             var movie = _mapper.Map<CreateAndUpdateMovie>(request);
             var result = await _movieRepository.UpdateMovieAsync(id, movie);
             
-            return Ok(BaseResponse<bool>.Success(result, "Movie updated successfully"));
+            return Ok(BaseResponse<int>.Success(result, "Movie updated successfully"));
         }
 
         // DELETE api/movies/5
         [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<int>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<IActionResult> Delete(int id)
         {
@@ -110,7 +110,7 @@ namespace MoviesAPI.Controllers
                 return NotFound(BaseResponse<object>.Failure("Movie not found"));
 
             var result = await _movieRepository.DeleteMovieAsync(id);
-            return Ok(BaseResponse<bool>.Success(result, "Movie deleted successfully"));
+            return Ok(BaseResponse<int>.Success(result, "Movie deleted successfully"));
         }
 
         // GET: /api/movies/genre/{genreName}
@@ -146,7 +146,7 @@ namespace MoviesAPI.Controllers
             if (!movies.Any())
                 return NotFound(BaseResponse<object>.Failure("No future movies found"));
 
-            return Ok(BaseResponse<List<FutureMovie>>.Success(movies));
+            return Ok(BaseResponse<List<FutureMovie>>.Success(movies.ToList()));
         }
 
         // POST api/movies/futuremovies
@@ -164,7 +164,7 @@ namespace MoviesAPI.Controllers
 
         // DELETE api/movies/futuremovies/5
         [HttpDelete("futuremovies/{id}")]
-        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<int>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<IActionResult> DeleteFutureMovie(long id)
         {
@@ -173,7 +173,7 @@ namespace MoviesAPI.Controllers
                 return NotFound(BaseResponse<object>.Failure("Future movie not found"));
 
             var result = await _movieRepository.DeleteFutureMovieAsync(id);
-            return Ok(BaseResponse<bool>.Success(result, "Future movie deleted successfully"));
+            return Ok(BaseResponse<int>.Success(result, "Future movie deleted successfully"));
         }
 
         // GET: /api/movies/5/rating/3

@@ -33,21 +33,21 @@ namespace MoviesAPI.Controllers
         public async Task<ActionResult<BaseResponse<List<TicketResponse>>>> Get()
         {
             var tickets = await _ticketRepository.GetTicketsAsync();
-            return Ok(BaseResponse<List<TicketResponse>>.Success(tickets));
+            return Ok(BaseResponse<List<TicketResponse>>.Success(tickets.ToList()));
         }
 
         // GET api/tickets/5
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<Ticket>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<MoviesAPI.Models.TicketResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<Ticket>>> Get(long id)
+        public async Task<ActionResult<BaseResponse<MoviesAPI.Models.TicketResponse>>> Get(long id)
         {
             var ticket = await _ticketRepository.GetTicketAsync(id);
 
             if (ticket == null)
                 return NotFound(BaseResponse<object>.Failure("Ticket not found"));
 
-            return Ok(BaseResponse<Ticket>.Success(ticket));
+            return Ok(BaseResponse<MoviesAPI.Models.TicketResponse>.Success(ticket));
         }
 
         // POST api/tickets
@@ -78,7 +78,7 @@ namespace MoviesAPI.Controllers
 
         // DELETE api/tickets/5
         [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<int>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<IActionResult> Delete(int id)
         {
@@ -87,7 +87,7 @@ namespace MoviesAPI.Controllers
                 return NotFound(BaseResponse<object>.Failure("Ticket not found"));
 
             var result = await _ticketRepository.DeleteTicketAsync(id);
-            return Ok(BaseResponse<bool>.Success(result, "Ticket deleted successfully"));
+            return Ok(BaseResponse<int>.Success(result, "Ticket deleted successfully"));
         }
     }
 }

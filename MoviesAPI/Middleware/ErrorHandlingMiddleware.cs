@@ -111,13 +111,3 @@ namespace MoviesAPI.Middleware
         }
     }
 }
-
-
-// Extension method for easier middleware registration
-public static class ErrorHandlingMiddlewareExtensions
-{
-    public static IApplicationBuilder UseErrorHandling(this IApplicationBuilder builder)
-    {
-        return builder.UseMiddleware<ErrorHandlingMiddleware>();
-    }
-}

@@ -40,7 +40,7 @@ namespace MoviesAPI.Application.Mappings
                 .ForMember(dest => dest.EmailConfirmed, opt => opt.Ignore());
 
             // LoginRequest mapping
-            CreateMap<LoginRequest, MoviesAPI.Models.System.LoginRequest>();
+            CreateMap<MoviesAPI.Application.DTOs.Requests.Users.LoginRequest, MoviesAPI.Models.System.LoginRequest>();
         }
     }
 }

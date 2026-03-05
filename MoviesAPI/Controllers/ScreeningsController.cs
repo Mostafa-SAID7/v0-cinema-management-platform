@@ -38,7 +38,7 @@ namespace MoviesAPI.Controllers
         public async Task<ActionResult<BaseResponse<List<ScreeningResponse>>>> Get()
         {
             var screenings = await _screeningRepository.GetScreeningsAsync();
-            return Ok(BaseResponse<List<ScreeningResponse>>.Success(screenings));
+            return Ok(BaseResponse<List<ScreeningResponse>>.Success(screenings.ToList()));
         }
 
         // GET api/screenings/5

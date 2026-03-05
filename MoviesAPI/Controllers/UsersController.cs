@@ -77,10 +77,10 @@ namespace MoviesAPI.Controllers
 
         // PUT api/users
         [HttpPut]
-        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<int>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<bool>>> Put([FromBody] UpdateUserProfileRequest request)
+        public async Task<ActionResult<BaseResponse<int>>> Put([FromBody] UpdateUserProfileRequest request)
         {
             var existing = await _userRepository.GetUserByUsername(request.Username);
             if (existing == null)
@@ -102,12 +102,12 @@ namespace MoviesAPI.Controllers
             };
 
             var result = await _userRepository.UpdateUserAsync(userProfile);
-            return Ok(BaseResponse<bool>.Success(result, "User updated successfully"));
+            return Ok(BaseResponse<int>.Success(result, "User updated successfully"));
         }
 
         // DELETE api/users/5
         [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<int>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<IActionResult> Delete(int id)
         {
@@ -116,7 +116,7 @@ namespace MoviesAPI.Controllers
                 return NotFound(BaseResponse<object>.Failure("User not found"));
 
             var result = await _userRepository.DeleteUserAsync(id);
-            return Ok(BaseResponse<bool>.Success(result, "User deleted successfully"));
+            return Ok(BaseResponse<int>.Success(result, "User deleted successfully"));
         }
 
         // PUT api/users/5/role

@@ -13,40 +13,50 @@ export interface CarouselItem {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="relative">
+    <div class="relative" role="region" aria-roledescription="carousel">
       <!-- Carousel Container -->
-      <div class="overflow-hidden rounded-lg bg-secondary relative h-96 md:h-[500px]">
-        <div class="flex transition-transform duration-500" [style.transform]="'translateX(-' + currentIndex() * 100 + '%)'">
+      <div class="overflow-hidden rounded-xl border bg-card shadow">
+        <div
+          class="flex transition-transform duration-500 ease-in-out"
+          [style.transform]="'translateX(-' + currentIndex() * 100 + '%)'"
+        >
           <ng-content></ng-content>
         </div>
-
-        <!-- Overlay Gradient -->
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-background"></div>
       </div>
 
-      <!-- Navigation Buttons -->
+      <!-- Previous Button -->
       <button
         (click)="previous()"
-        class="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-smooth"
+        class="absolute left-4 top-1/2 -translate-y-1/2 z-20 inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+        aria-label="Previous slide"
       >
-        <span class="text-2xl">‹</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
       </button>
 
+      <!-- Next Button -->
       <button
         (click)="next()"
-        class="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-smooth"
+        class="absolute right-4 top-1/2 -translate-y-1/2 z-20 inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+        aria-label="Next slide"
       >
-        <span class="text-2xl">›</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m9 18 6-6-6-6"/>
+        </svg>
       </button>
 
       <!-- Indicators -->
-      <div class="flex justify-center gap-2 mt-4">
+      <div class="flex justify-center gap-1.5 mt-3">
         <button
           *ngFor="let i of getIndicators()"
           (click)="goToSlide(i)"
-          [class.bg-primary]="currentIndex() === i"
-          [class.bg-muted]="currentIndex() !== i"
-          class="w-2 h-2 rounded-full transition-smooth"
+          [ngClass]="{
+            'bg-primary': currentIndex() === i,
+            'bg-muted-foreground/30': currentIndex() !== i
+          }"
+          class="h-1.5 w-1.5 rounded-full transition-colors"
+          [attr.aria-label]="'Go to slide ' + (i + 1)"
         ></button>
       </div>
     </div>
@@ -56,7 +66,6 @@ export class CarouselComponent implements OnInit {
   currentIndex = signal(0);
   autoPlay = input(true);
   autoPlayInterval = input(5000);
-
   items = input<CarouselItem[]>([]);
 
   ngOnInit(): void {
@@ -89,7 +98,7 @@ export class CarouselComponent implements OnInit {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="w-full h-full flex-shrink-0 flex items-center justify-center bg-secondary">
+    <div class="w-full h-full flex-shrink-0 flex items-center justify-center" role="group" aria-roledescription="slide">
       <ng-content></ng-content>
     </div>
   `,

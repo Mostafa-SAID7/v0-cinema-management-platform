@@ -27,17 +27,20 @@ import { ToastContainerComponent } from '../../ui/toast-container.component';
         </main>
       </div>
 
-      <!-- Mobile Drawer -->
-      <div 
-        *ngIf="sidebarOpen()" 
-        class="fixed inset-0 z-40 md:hidden"
+      <!-- Mobile Drawer Overlay -->
+      <div
+        *ngIf="sidebarOpen()"
+        class="fixed inset-0 z-50 md:hidden"
         (click)="closeSidebar()"
       >
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/50 animate-fade-in"></div>
+        <!-- Backdrop (shadcn Sheet pattern) -->
+        <div class="fixed inset-0 z-50 bg-black/80"></div>
 
-        <!-- Drawer -->
-        <aside class="absolute inset-y-0 left-0 w-64 bg-card border-r border-border animate-slide-in-left overflow-y-auto">
+        <!-- Drawer Panel -->
+        <aside
+          class="fixed inset-y-0 left-0 z-50 w-64 border-r bg-background animate-slide-in-left overflow-y-auto"
+          (click)="$event.stopPropagation()"
+        >
           <app-sidebar></app-sidebar>
         </aside>
       </div>
@@ -46,22 +49,6 @@ import { ToastContainerComponent } from '../../ui/toast-container.component';
       <app-toast-container></app-toast-container>
     </div>
   `,
-  styles: [
-    `
-      @keyframes fade-in {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      .animate-fade-in {
-        animation: fade-in 0.3s ease-out;
-      }
-    `,
-  ],
 })
 export class MainLayoutComponent {
   sidebarOpen = signal(false);

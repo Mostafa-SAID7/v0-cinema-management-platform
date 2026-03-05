@@ -7,22 +7,35 @@
   --foreground: 0 0% 3%;
   --card: 0 0% 100%;
   --card-foreground: 0 0% 3%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 3%;
   --primary: 16 87% 54%;
   --primary-foreground: 0 0% 100%;
   --secondary: 0 0% 96%;
   --secondary-foreground: 0 0% 3%;
-  --muted: 0 0% 89%;
+  --muted: 0 0% 96%;
   --muted-foreground: 0 0% 45%;
-  --accent: 16 87% 54%;
-  --accent-foreground: 0 0% 100%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 3%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   --border: 0 0% 89%;
   --input: 0 0% 89%;
   --ring: 16 87% 54%;
   --radius: 0.5rem;
-  --neon-glow: 0px 0px 20px rgba(239, 68, 68, 0.6);
-  --neon-glow-sm: 0px 0px 10px rgba(239, 68, 68, 0.4);
+  --chart-1: 16 87% 54%;
+  --chart-2: 0 84% 60%;
+  --chart-3: 24 80% 50%;
+  --chart-4: 40 90% 50%;
+  --chart-5: 350 80% 55%;
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 0 0% 15%;
+  --sidebar-primary: 16 87% 54%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 0 0% 15%;
+  --sidebar-border: 0 0% 89%;
+  --sidebar-ring: 16 87% 54%;
 }
 
 /* Design tokens for dark mode */
@@ -31,21 +44,34 @@
   --foreground: 0 0% 93%;
   --card: 0 0% 10%;
   --card-foreground: 0 0% 93%;
+  --popover: 0 0% 10%;
+  --popover-foreground: 0 0% 93%;
   --primary: 0 84% 60%;
-  --primary-foreground: 0 0% 6%;
-  --secondary: 0 0% 20%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 15%;
   --secondary-foreground: 0 0% 93%;
-  --muted: 0 0% 30%;
+  --muted: 0 0% 15%;
   --muted-foreground: 0 0% 64%;
-  --accent: 0 84% 60%;
-  --accent-foreground: 0 0% 6%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 6%;
-  --border: 0 0% 20%;
-  --input: 0 0% 20%;
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 93%;
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 93%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
   --ring: 0 84% 60%;
-  --neon-glow: 0px 0px 20px rgba(239, 68, 68, 0.6);
-  --neon-glow-sm: 0px 0px 10px rgba(239, 68, 68, 0.4);
+  --chart-1: 0 84% 60%;
+  --chart-2: 16 87% 54%;
+  --chart-3: 24 80% 50%;
+  --chart-4: 40 90% 50%;
+  --chart-5: 350 80% 55%;
+  --sidebar-background: 0 0% 8%;
+  --sidebar-foreground: 0 0% 93%;
+  --sidebar-primary: 0 84% 60%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent-foreground: 0 0% 93%;
+  --sidebar-border: 0 0% 15%;
+  --sidebar-ring: 0 84% 60%;
 }
 
 @layer base {
@@ -96,47 +122,26 @@
   }
 }
 
-/* Glassmorphism effect */
-.glassmorphism {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.dark .glassmorphism {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Neon glow effects */
-.neon-glow {
-  box-shadow: var(--neon-glow);
-}
-
-.neon-glow-sm {
-  box-shadow: var(--neon-glow-sm);
-}
-
-/* Neon text glow */
-.neon-text {
-  text-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
-}
-
-/* Smooth transitions */
-.transition-smooth {
-  @apply transition-all duration-300 ease-in-out;
-}
-
-/* Animations */
-@keyframes pulse-neon {
-  0%, 100% {
-    box-shadow: var(--neon-glow);
+/* Shadcn-standard animations */
+@keyframes accordion-down {
+  from {
+    height: 0;
   }
-  50% {
-    box-shadow: 0px 0px 30px rgba(239, 68, 68, 0.8);
+  to {
+    height: var(--radix-accordion-content-height, auto);
   }
 }
 
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height, auto);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/* Functional UI animations */
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);
@@ -190,10 +195,6 @@
   }
 }
 
-.animate-pulse-neon {
-  animation: pulse-neon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
@@ -212,6 +213,14 @@
 
 .animate-scale-in {
   animation: scale-in 0.3s ease-out;
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
 }
 
 /* Utility classes */

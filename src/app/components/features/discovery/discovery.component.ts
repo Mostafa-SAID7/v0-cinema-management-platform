@@ -17,7 +17,7 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
       <section class="bg-gradient-to-b from-secondary to-background px-6 md:px-8 py-12 md:py-16 space-y-6">
         <div class="max-w-3xl space-y-4">
           <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground text-balance">
-            Discover Your Next <span class="text-primary neon-text">Blockbuster</span>
+            Discover Your Next <span class="text-primary">Blockbuster</span>
           </h1>
           <p class="text-lg text-muted-foreground">
             Explore trending movies, upcoming releases, and personalized recommendations all in one place.
@@ -32,33 +32,19 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
             [value]="searchQuery()"
             (valueChange)="onSearch($event)"
           ></app-input>
-          <svg
-            *ngIf="searchResults().length > 0"
-            class="absolute right-3 top-2.5 w-5 h-5 text-muted-foreground"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            ></path>
-          </svg>
 
           <!-- Search Results Dropdown -->
           <div
             *ngIf="searchResults().length > 0"
-            class="absolute top-full left-0 right-0 mt-2 glassmorphism rounded-lg p-4 max-h-96 overflow-y-auto z-10 space-y-2"
+            class="absolute top-full left-0 right-0 mt-2 rounded-xl border bg-popover text-popover-foreground shadow-md p-2 max-h-96 overflow-y-auto z-10 space-y-1"
           >
             <a
               *ngFor="let movie of searchResults()"
               [routerLink]="['/movie', movie.id]"
-              class="block px-4 py-2 rounded-lg hover:bg-secondary transition-smooth text-foreground"
+              class="block px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-foreground"
             >
-              <p class="font-medium">{{ movie.title }}</p>
-              <p class="text-sm text-muted-foreground">{{ movie.year }} • {{ movie.genre.join(', ') }}</p>
+              <p class="font-medium text-sm">{{ movie.title }}</p>
+              <p class="text-xs text-muted-foreground">{{ movie.year }} &bull; {{ movie.genre.join(', ') }}</p>
             </a>
           </div>
         </div>
@@ -79,7 +65,7 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
             class="group cursor-pointer"
           >
             <div
-              class="aspect-video bg-secondary rounded-lg overflow-hidden glassmorphism hover:neon-glow group-hover:scale-105 transition-smooth relative"
+              class="aspect-video rounded-xl border bg-card shadow overflow-hidden group-hover:shadow-md group-hover:scale-[1.02] transition-all duration-200 relative"
             >
               <div class="w-full h-full bg-gradient-to-br from-primary/20 to-secondary flex items-center justify-center">
                 <div class="text-center space-y-2">
@@ -90,14 +76,17 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
 
               <!-- Rating Badge -->
               <div
-                class="absolute top-3 right-3 bg-primary text-primary-foreground px-2 py-1 rounded-lg text-xs font-bold neon-glow"
+                class="absolute top-3 right-3 inline-flex items-center rounded-md border border-transparent bg-primary text-primary-foreground px-2.5 py-0.5 text-xs font-semibold shadow"
               >
-                ★ {{ movie.rating }}
+                {{ movie.rating }}
               </div>
 
               <!-- Genre Tags -->
               <div class="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1">
-                <span *ngFor="let genre of movie.genre.slice(0, 2)" class="text-xs bg-black/50 text-white px-2 py-1 rounded">
+                <span
+                  *ngFor="let genre of movie.genre.slice(0, 2)"
+                  class="inline-flex items-center rounded-md border border-transparent bg-secondary text-secondary-foreground px-2 py-0.5 text-xs font-semibold"
+                >
                   {{ genre }}
                 </span>
               </div>
@@ -107,10 +96,9 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
               <p class="font-medium text-foreground group-hover:text-primary transition-colors text-sm line-clamp-2">
                 {{ movie.title }}
               </p>
-              <p class="text-xs text-muted-foreground">{{ movie.duration }} min • {{ movie.year }}</p>
+              <p class="text-xs text-muted-foreground">{{ movie.duration }} min &bull; {{ movie.year }}</p>
             </div>
           </a>
-        </div>
         </div>
       </section>
 
@@ -120,11 +108,11 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
         <div class="flex flex-wrap gap-2">
           <button
             (click)="setSelectedGenre('')"
-            [class.bg-primary]="selectedGenre() === ''"
-            [class.text-primary-foreground]="selectedGenre() === ''"
-            [class.bg-secondary]="selectedGenre() !== ''"
-            [class.text-foreground]="selectedGenre() !== ''"
-            class="px-6 py-2 rounded-full border border-border transition-smooth font-medium"
+            [ngClass]="{
+              'bg-primary text-primary-foreground shadow hover:bg-primary/90': selectedGenre() === '',
+              'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground': selectedGenre() !== ''
+            }"
+            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors h-9 px-4 py-2"
           >
             All Movies
           </button>
@@ -132,11 +120,11 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
           <button
             *ngFor="let genre of genres()"
             (click)="setSelectedGenre(genre)"
-            [class.bg-primary]="selectedGenre() === genre"
-            [class.text-primary-foreground]="selectedGenre() === genre"
-            [class.bg-secondary]="selectedGenre() !== genre"
-            [class.text-foreground]="selectedGenre() !== genre"
-            class="px-6 py-2 rounded-full border border-border transition-smooth hover:border-primary font-medium"
+            [ngClass]="{
+              'bg-primary text-primary-foreground shadow hover:bg-primary/90': selectedGenre() === genre,
+              'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground': selectedGenre() !== genre
+            }"
+            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors h-9 px-4 py-2"
           >
             {{ genre }}
           </button>
@@ -146,15 +134,14 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
       <!-- Filtered Movies Grid -->
       <section *ngIf="selectedGenre()" class="px-6 md:px-8 space-y-4">
         <h2 class="text-2xl font-bold text-foreground">{{ selectedGenre() }} Movies</h2>
-        <ng-container *ngIf="genreMovies().length > 0; else noGenreMovies">
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <a
-              *ngFor="let movie of genreMovies()"
-              [routerLink]="['/movie', movie.id]"
-              class="group cursor-pointer"
-            >
+        <div *ngIf="genreMovies().length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <a
+            *ngFor="let movie of genreMovies()"
+            [routerLink]="['/movie', movie.id]"
+            class="group cursor-pointer"
+          >
             <div
-              class="aspect-video bg-secondary rounded-lg overflow-hidden glassmorphism hover:neon-glow group-hover:scale-105 transition-smooth relative"
+              class="aspect-video rounded-xl border bg-card shadow overflow-hidden group-hover:shadow-md group-hover:scale-[1.02] transition-all duration-200 relative"
             >
               <div class="w-full h-full bg-gradient-to-br from-primary/20 to-secondary flex items-center justify-center">
                 <div class="text-center space-y-2">
@@ -164,9 +151,9 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
               </div>
 
               <div
-                class="absolute top-3 right-3 bg-primary text-primary-foreground px-2 py-1 rounded-lg text-xs font-bold neon-glow"
+                class="absolute top-3 right-3 inline-flex items-center rounded-md border border-transparent bg-primary text-primary-foreground px-2.5 py-0.5 text-xs font-semibold shadow"
               >
-                ★ {{ movie.rating }}
+                {{ movie.rating }}
               </div>
             </div>
 
@@ -190,17 +177,17 @@ import { EmptyStateComponent } from '../../ui/empty-state.component';
             class="group cursor-pointer"
           >
             <div
-              class="aspect-video bg-secondary rounded-lg overflow-hidden glassmorphism hover:neon-glow group-hover:scale-105 transition-smooth relative"
+              class="aspect-video rounded-xl border bg-card shadow overflow-hidden group-hover:shadow-md group-hover:scale-[1.02] transition-all duration-200 relative"
             >
               <div class="w-full h-full bg-gradient-to-br from-primary/20 to-secondary flex items-center justify-center">
                 <p class="text-sm text-muted-foreground">Coming Soon</p>
               </div>
 
-              <div class="absolute top-3 right-3 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold">
+              <div class="absolute top-3 right-3 inline-flex items-center rounded-md border border-transparent bg-secondary text-secondary-foreground px-2.5 py-0.5 text-xs font-semibold">
                 In {{ 45 }} days
               </div>
 
-              <div class="absolute bottom-3 left-3 right-3 text-xs bg-black/50 text-white px-2 py-1 rounded">
+              <div class="absolute bottom-3 left-3 right-3 inline-flex items-center rounded-md border border-transparent bg-secondary text-secondary-foreground px-2 py-0.5 text-xs font-semibold">
                 {{ movie.releaseDate }}
               </div>
             </div>
@@ -226,7 +213,6 @@ export class DiscoveryComponent implements OnInit {
   isLoading = signal(true);
 
   ngOnInit(): void {
-    // Simulate loading
     setTimeout(() => {
       this.isLoading.set(false);
     }, 800);

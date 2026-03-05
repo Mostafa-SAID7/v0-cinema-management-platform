@@ -20,20 +20,20 @@ import { ErrorPageComponent } from '../../pages/error-page.component';
             {{ m.title }} - Backdrop Image
           </div>
 
-          <!-- Floating Elements -->
-          <div class="absolute top-6 right-6 bg-primary text-primary-foreground px-4 py-2 rounded-full font-bold neon-glow">
-            ★ {{ m.rating }}/10
+          <!-- Rating Badge -->
+          <div class="absolute top-6 right-6 inline-flex items-center rounded-md border border-transparent bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold shadow">
+            {{ m.rating }}/10
           </div>
         </div>
 
         <!-- Content -->
         <div class="relative -mt-16 md:-mt-20 px-4 md:px-8 pb-8 space-y-8">
           <!-- Movie Info Card -->
-          <div class="glassmorphism rounded-lg p-6 md:p-8 space-y-6 animate-slide-in-up">
+          <div class="rounded-xl border bg-card text-card-foreground shadow p-6 md:p-8 space-y-6 animate-slide-in-up">
             <div class="flex flex-col md:flex-row gap-6">
               <!-- Poster -->
               <div
-                class="w-40 h-56 rounded-lg bg-gradient-to-br from-primary/20 to-secondary flex-shrink-0 flex items-center justify-center text-muted-foreground neon-glow"
+                class="w-40 h-56 rounded-lg bg-gradient-to-br from-primary/20 to-secondary flex-shrink-0 flex items-center justify-center text-muted-foreground border shadow-sm"
               >
                 <div class="text-center">
                   <p class="font-bold text-primary">{{ m.title }}</p>
@@ -45,17 +45,17 @@ import { ErrorPageComponent } from '../../pages/error-page.component';
                 <div>
                   <h1 class="text-4xl md:text-5xl font-bold text-foreground text-balance">{{ m.title }}</h1>
                   <p class="text-muted-foreground text-lg mt-2">
-                    {{ m.year }} • {{ m.duration }} min • {{ m.genre.join(', ') }}
+                    {{ m.year }} &bull; {{ m.duration }} min &bull; {{ m.genre.join(', ') }}
                   </p>
                 </div>
 
                 <!-- Rating & Stats -->
                 <div class="flex flex-col gap-4">
                   <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-3 bg-primary/20 rounded-lg px-4 py-3">
+                    <div class="flex items-center gap-3 rounded-lg border bg-card px-4 py-3">
                       <span class="text-4xl font-bold text-primary">{{ m.rating }}</span>
                       <div class="space-y-1">
-                        <p class="text-sm font-bold text-primary">★★★★★</p>
+                        <p class="text-sm font-bold text-primary">Rating</p>
                         <p class="text-xs text-muted-foreground">{{ getVoteCount() }} votes</p>
                       </div>
                     </div>
@@ -67,14 +67,17 @@ import { ErrorPageComponent } from '../../pages/error-page.component';
                   <div class="flex gap-3 pt-4">
                     <a
                       [routerLink]="['/booking', m.id]"
-                      class="flex-1 px-8 py-3 rounded-lg bg-primary text-primary-foreground font-bold hover:bg-primary/90 neon-glow transition-smooth text-center cursor-pointer"
+                      class="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-8 cursor-pointer text-center"
                     >
                       Pick a Showtime
                     </a>
                     <button
-                      class="px-4 py-3 rounded-lg border border-border text-foreground hover:bg-secondary transition-smooth"
+                      class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-10 px-4"
                     >
-                      ♥ Add to Favorites
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                      </svg>
+                      Favorite
                     </button>
                   </div>
                 </div>
@@ -82,13 +85,16 @@ import { ErrorPageComponent } from '../../pages/error-page.component';
             </div>
           </div>
 
+          <!-- Separator -->
+          <div class="shrink-0 bg-border h-px w-full"></div>
+
           <!-- Cast Section -->
           <section class="space-y-4">
             <h2 class="text-2xl font-bold text-foreground">Cast & Crew</h2>
             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
               <div *ngFor="let actor of getCastMembers()" class="text-center space-y-2 group cursor-pointer">
                 <div
-                  class="w-full aspect-square rounded-lg bg-gradient-to-br from-primary/20 to-secondary flex items-center justify-center text-muted-foreground group-hover:neon-glow transition-smooth"
+                  class="w-full aspect-square rounded-lg bg-gradient-to-br from-primary/20 to-secondary flex items-center justify-center text-muted-foreground border shadow-sm group-hover:shadow-md transition-all duration-200"
                 >
                   <div class="text-center">
                     <p class="text-xs font-bold text-primary">{{ actor }}</p>
@@ -100,53 +106,58 @@ import { ErrorPageComponent } from '../../pages/error-page.component';
             </div>
           </section>
 
+          <!-- Separator -->
+          <div class="shrink-0 bg-border h-px w-full"></div>
+
           <!-- Reviews & Ratings Section -->
           <section class="space-y-4">
             <div class="flex items-center justify-between">
               <h2 class="text-2xl font-bold text-foreground">Reviews & Ratings</h2>
-              <button class="px-4 py-2 rounded-lg border border-border text-foreground hover:bg-secondary transition-smooth text-sm font-medium">
+              <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2">
                 Write a Review
               </button>
             </div>
 
             <!-- Review List -->
             <div class="space-y-4">
-              <div *ngFor="let review of getReviews()" class="glassmorphism rounded-lg p-6 space-y-3 hover:bg-card/80 transition-smooth">
+              <div *ngFor="let review of getReviews()" class="rounded-xl border bg-card text-card-foreground shadow p-6 space-y-3 hover:shadow-md transition-all duration-200">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary text-sm">
-                      {{ review.author.charAt(0) }}
-                    </div>
+                    <span class="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10 bg-primary/20 items-center justify-center">
+                      <span class="text-sm font-medium text-primary">{{ review.author.charAt(0) }}</span>
+                    </span>
                     <div>
-                      <p class="font-medium text-foreground">{{ review.author }}</p>
+                      <p class="font-medium text-foreground text-sm">{{ review.author }}</p>
                       <p class="text-xs text-muted-foreground">{{ review.date }}</p>
                     </div>
                   </div>
-                  <div class="flex items-center gap-1 text-primary font-bold">
-                    <span>★</span>
-                    <span>{{ review.rating }}</span>
+                  <div class="inline-flex items-center rounded-md border border-transparent bg-primary text-primary-foreground px-2.5 py-0.5 text-xs font-semibold shadow">
+                    {{ review.rating }}
                   </div>
                 </div>
-                <p class="text-foreground leading-relaxed">{{ review.text }}</p>
+                <p class="text-foreground leading-relaxed text-sm">{{ review.text }}</p>
                 <div class="flex gap-4 pt-2 text-xs text-muted-foreground">
-                  <button class="hover:text-primary transition-colors">👍 Helpful</button>
-                  <button class="hover:text-primary transition-colors">👎 Not Helpful</button>
+                  <button class="hover:text-foreground transition-colors">Helpful</button>
+                  <button class="hover:text-foreground transition-colors">Not Helpful</button>
                 </div>
               </div>
             </div>
           </section>
+
+          <!-- Separator -->
+          <div class="shrink-0 bg-border h-px w-full"></div>
 
           <!-- Similar Movies -->
           <section class="space-y-4">
             <h2 class="text-2xl font-bold text-foreground">Similar Movies</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
               <a *ngFor="let similar of getSimilarMovies()" [routerLink]="['/movie', similar.id]" class="group cursor-pointer">
-                <div class="aspect-video bg-secondary rounded-lg overflow-hidden glassmorphism hover:neon-glow group-hover:scale-105 transition-smooth relative">
+                <div class="aspect-video rounded-xl border bg-card shadow overflow-hidden group-hover:shadow-md group-hover:scale-[1.02] transition-all duration-200 relative">
                   <div class="w-full h-full bg-gradient-to-br from-primary/20 to-secondary flex items-center justify-center">
                     <p class="text-xs font-bold text-primary text-center px-2">{{ similar.title }}</p>
                   </div>
-                  <div class="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold">
-                    ★ {{ similar.rating }}
+                  <div class="absolute top-2 right-2 inline-flex items-center rounded-md border border-transparent bg-primary text-primary-foreground px-2 py-0.5 text-xs font-semibold shadow">
+                    {{ similar.rating }}
                   </div>
                 </div>
                 <p class="mt-2 font-medium text-foreground text-sm group-hover:text-primary transition-colors line-clamp-2">

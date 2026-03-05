@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-2">
+    <div>
       <ng-content></ng-content>
     </div>
   `,
@@ -20,43 +20,42 @@ export class AccordionComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="glassmorphism rounded-lg overflow-hidden">
-      <button
-        (click)="toggleOpen()"
-        class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-smooth"
-      >
-        <span class="font-medium text-foreground">{{ title() }}</span>
-        <span
-          class="text-muted-foreground transform transition-transform"
-          [class.rotate-180]="open()"
+    <div class="border-b">
+      <h3 class="flex">
+        <button
+          (click)="toggleOpen()"
+          class="flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:underline"
+          [attr.aria-expanded]="open()"
         >
-          ▼
-        </span>
-      </button>
+          <span>{{ title() }}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="shrink-0 text-muted-foreground transition-transform duration-200"
+            [class.rotate-180]="open()"
+          >
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+      </h3>
 
-      <div *ngIf="open()" class="border-t border-border px-6 py-4 bg-secondary/20 animate-slide-in-down">
-        <ng-content></ng-content>
+      <div
+        *ngIf="open()"
+        class="overflow-hidden text-sm animate-accordion-down"
+      >
+        <div class="pb-4 pt-0">
+          <ng-content></ng-content>
+        </div>
       </div>
     </div>
   `,
-  styles: [
-    `
-      @keyframes slide-in-down {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .animate-slide-in-down {
-        animation: slide-in-down 0.3s ease-out;
-      }
-    `,
-  ],
 })
 export class AccordionItemComponent {
   title = input<string>('');
@@ -72,9 +71,9 @@ export class AccordionItemComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <p class="text-foreground leading-relaxed">
+    <div class="text-sm text-muted-foreground leading-relaxed">
       <ng-content></ng-content>
-    </p>
+    </div>
   `,
 })
 export class AccordionContentComponent {}

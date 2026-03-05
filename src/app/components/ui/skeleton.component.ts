@@ -15,7 +15,7 @@ import { CommonModule } from '@angular/common';
         'aspect-video w-full': size() === 'video',
         'w-10 h-10 rounded-full': size() === 'avatar',
       }"
-      class="bg-gradient-to-r from-muted via-background to-muted animate-pulse rounded-md"
+      class="animate-pulse rounded-md bg-primary/10"
     ></div>
   `,
 })

@@ -1,7 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Menu, X, Moon, Sun, Search } from 'lucide-angular';
 import { ThemeService } from '../../../services/theme.service';
 
 @Component({
@@ -9,61 +8,81 @@ import { ThemeService } from '../../../services/theme.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <header class="sticky top-0 z-30 border-b border-border bg-card">
-      <div class="flex items-center justify-between h-16 px-4 md:px-6">
+    <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div class="flex items-center justify-between h-14 px-4 md:px-6">
         <!-- Mobile Menu Toggle -->
         <button
           (click)="sidebarOpenChange.emit(true)"
-          class="md:hidden p-2 hover:bg-secondary rounded-lg transition-smooth"
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground h-9 w-9 md:hidden"
           aria-label="Open menu"
         >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" x2="20" y1="12" y2="12"/>
+            <line x1="4" x2="20" y1="6" y2="6"/>
+            <line x1="4" x2="20" y1="18" y2="18"/>
           </svg>
         </button>
 
         <!-- Search Bar (Desktop) -->
         <div class="hidden md:flex flex-1 mx-6">
           <div class="relative w-full max-w-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
             <input
               type="search"
               placeholder="Search movies..."
-              class="w-full px-4 py-2 rounded-lg bg-secondary text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 pl-9 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
             />
-            <svg class="absolute right-3 top-2.5 w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
           </div>
         </div>
 
         <!-- Right Actions -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-1">
           <!-- Mobile Search -->
-          <button class="md:hidden p-2 hover:bg-secondary rounded-lg transition-smooth">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground h-9 w-9 md:hidden"
+            aria-label="Search"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
             </svg>
           </button>
 
           <!-- Theme Toggle -->
           <button
             (click)="toggleTheme()"
-            class="p-2 hover:bg-secondary rounded-lg transition-smooth"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground h-9 w-9"
             [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
           >
-            <svg *ngIf="themeService.theme() === 'dark'" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 18a6 6 0 100-12 6 6 0 000 12zM12 2v4m0 12v4M6.22 6.22l2.83 2.83m5.9 5.9l2.83 2.83M2 12h4m12 0h4M6.22 17.78l2.83-2.83m5.9-5.9l2.83-2.83"></path>
+            <!-- Sun icon (shown in dark mode) -->
+            <svg *ngIf="themeService.theme() === 'dark'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2"/>
+              <path d="M12 20v2"/>
+              <path d="m4.93 4.93 1.41 1.41"/>
+              <path d="m17.66 17.66 1.41 1.41"/>
+              <path d="M2 12h2"/>
+              <path d="M20 12h2"/>
+              <path d="m6.34 17.66-1.41 1.41"/>
+              <path d="m19.07 4.93-1.41 1.41"/>
             </svg>
-            <svg *ngIf="themeService.theme() === 'light'" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+            <!-- Moon icon (shown in light mode) -->
+            <svg *ngIf="themeService.theme() === 'light'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
             </svg>
           </button>
 
-          <!-- User Profile -->
-          <button class="p-2 hover:bg-secondary rounded-lg transition-smooth">
-            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              JD
-            </div>
+          <!-- User Profile Avatar -->
+          <button
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground h-9 w-9"
+            aria-label="User profile"
+          >
+            <span class="relative flex shrink-0 overflow-hidden rounded-full h-8 w-8 bg-primary items-center justify-center">
+              <span class="text-xs font-medium text-primary-foreground">JD</span>
+            </span>
           </button>
         </div>
       </div>

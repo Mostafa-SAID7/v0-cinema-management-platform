@@ -1,4 +1,4 @@
-import { Component, inject, computed, effect } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
@@ -8,88 +8,99 @@ import { AuthService } from '../../../services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="flex flex-col h-full bg-card">
+    <div class="flex flex-col h-full bg-sidebar text-sidebar-foreground">
       <!-- Logo -->
-      <div class="flex items-center gap-2 px-6 py-8 border-b border-border">
-        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary neon-glow">
-          <span class="text-primary-foreground font-bold text-sm">CV</span>
+      <div class="flex items-center gap-2 px-6 py-6 border-b border-sidebar-border">
+        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-primary shadow-sm">
+          <span class="text-sidebar-primary-foreground font-bold text-sm">CV</span>
         </div>
-        <span class="text-xl font-bold text-foreground">CinemaVerse</span>
+        <span class="text-xl font-bold tracking-tight">CinemaVerse</span>
       </div>
 
       <!-- Navigation Links -->
-      <nav class="flex-1 px-4 py-6 space-y-2">
+      <nav class="flex-1 px-3 py-4 space-y-1">
         <a
           routerLink="/"
-          routerLinkActive="bg-primary text-primary-foreground"
+          routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
           [routerLinkActiveOptions]="{ exact: true }"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground hover:bg-secondary transition-smooth cursor-pointer"
+          class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V9a7 7 0 0114 0v8a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4.586a1 1 0 00-.293-.707l-2.828-2.829A1 1 0 0017 6h-5m0 16V9m0 16H9m4 0h4"></path>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="10 8 16 12 10 16 10 8"/>
           </svg>
-          <span class="font-medium">Discover</span>
+          <span>Discover</span>
         </a>
 
         <a
           routerLink="/dashboard"
-          routerLinkActive="bg-primary text-primary-foreground"
+          routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
           [routerLinkActiveOptions]="{ exact: false }"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground hover:bg-secondary transition-smooth cursor-pointer"
+          class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2 1m2-1l-2-1m2 1v2.5"></path>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+            <path d="M13 5v2"/>
+            <path d="M13 17v2"/>
+            <path d="M13 11v2"/>
           </svg>
-          <span class="font-medium">My Tickets</span>
+          <span>My Tickets</span>
         </a>
 
         <a
           routerLink="/support"
-          routerLinkActive="bg-primary text-primary-foreground"
+          routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
           [routerLinkActiveOptions]="{ exact: false }"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground hover:bg-secondary transition-smooth cursor-pointer"
+          class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <path d="M12 17h.01"/>
           </svg>
-          <span class="font-medium">Support</span>
+          <span>Support</span>
         </a>
       </nav>
 
+      <!-- Separator -->
+      <div class="shrink-0 bg-sidebar-border h-px w-full"></div>
+
       <!-- User Section -->
-      <div class="border-t border-border">
+      <div>
         <!-- User Info (if logged in) -->
-        <div *ngIf="isAuthenticated()" class="px-4 py-4 space-y-3">
+        <div *ngIf="isAuthenticated()" class="px-3 py-4 space-y-3">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              {{ getInitials(currentUser()?.name || 'User') }}
-            </div>
+            <span class="relative flex shrink-0 overflow-hidden rounded-full h-9 w-9 bg-sidebar-primary items-center justify-center">
+              <span class="text-xs font-medium text-sidebar-primary-foreground">
+                {{ getInitials(currentUser()?.name || 'User') }}
+              </span>
+            </span>
             <div class="flex-1 min-w-0">
-              <p class="font-medium text-foreground truncate">{{ currentUser()?.name || 'User' }}</p>
+              <p class="text-sm font-medium truncate">{{ currentUser()?.name || 'User' }}</p>
               <p class="text-xs text-muted-foreground truncate">{{ currentUser()?.email || 'user@example.com' }}</p>
             </div>
           </div>
           <button
             (click)="logout()"
-            class="w-full px-4 py-2 rounded-lg border border-border text-foreground hover:bg-secondary transition-smooth text-sm font-medium"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 w-full"
           >
             Logout
           </button>
         </div>
 
         <!-- Sign In (if not logged in) -->
-        <div *ngIf="!isAuthenticated()" class="px-4 py-4">
+        <div *ngIf="!isAuthenticated()" class="px-3 py-4">
           <button
-            class="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-smooth neon-glow text-sm"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 w-full"
           >
             Sign In
           </button>
         </div>
 
         <!-- Footer -->
-        <div class="px-4 py-4 border-t border-border">
+        <div class="px-3 py-3 border-t border-sidebar-border">
           <p class="text-xs text-muted-foreground">
-            © 2024 CinemaVerse. All rights reserved.
+            &copy; 2024 CinemaVerse. All rights reserved.
           </p>
         </div>
       </div>

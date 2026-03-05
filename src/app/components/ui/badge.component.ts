@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type BadgeVariant = 'default' | 'primary' | 'secondary' | 'outline' | 'destructive';
+export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
 @Component({
   selector: 'app-badge',
@@ -10,7 +10,7 @@ export type BadgeVariant = 'default' | 'primary' | 'secondary' | 'outline' | 'de
   template: `
     <span
       [ngClass]="getVariantClasses()"
-      class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-smooth"
+      class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
     >
       <ng-content></ng-content>
     </span>
@@ -21,17 +21,15 @@ export class BadgeComponent {
 
   getVariantClasses(): string {
     switch (this.variant()) {
-      case 'primary':
-        return 'bg-primary text-primary-foreground';
       case 'secondary':
-        return 'bg-secondary text-secondary-foreground';
-      case 'outline':
-        return 'border border-border text-foreground bg-background';
+        return 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80';
       case 'destructive':
-        return 'bg-destructive text-destructive-foreground';
+        return 'border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80';
+      case 'outline':
+        return 'text-foreground';
       case 'default':
       default:
-        return 'bg-secondary text-secondary-foreground';
+        return 'border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80';
     }
   }
 }

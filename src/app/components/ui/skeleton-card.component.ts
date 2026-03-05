@@ -7,12 +7,12 @@ import { SkeletonComponent } from './skeleton.component';
   standalone: true,
   imports: [CommonModule, SkeletonComponent],
   template: `
-    <div class="glassmorphism rounded-lg overflow-hidden animate-pulse">
+    <div class="rounded-xl border bg-card text-card-foreground shadow overflow-hidden animate-pulse">
       <!-- Image Skeleton -->
-      <div class="aspect-video bg-muted rounded-t-lg"></div>
+      <div class="aspect-video bg-primary/10 rounded-t-xl"></div>
 
       <!-- Content Skeleton -->
-      <div class="p-4 space-y-3">
+      <div class="p-6 space-y-3">
         <!-- Title -->
         <app-skeleton size="lg"></app-skeleton>
 

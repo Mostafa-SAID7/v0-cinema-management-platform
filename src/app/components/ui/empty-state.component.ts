@@ -6,16 +6,16 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="glassmorphism rounded-lg p-12 text-center space-y-4 my-8">
-      <div class="text-6xl">{{ icon() }}</div>
+    <div class="rounded-xl border bg-card text-card-foreground shadow p-12 text-center space-y-4 my-8">
+      <div class="text-6xl" aria-hidden="true">{{ icon() }}</div>
       <div class="space-y-2">
-        <h3 class="text-xl font-bold text-foreground">{{ title() }}</h3>
-        <p class="text-muted-foreground">{{ message() }}</p>
+        <h3 class="text-xl font-semibold leading-none tracking-tight">{{ title() }}</h3>
+        <p class="text-sm text-muted-foreground">{{ message() }}</p>
       </div>
       <button
         *ngIf="actionLabel()"
-        (click)="onAction()"
-        class="inline-block px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-smooth font-medium"
+        (click)="onAction.emit()"
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
       >
         {{ actionLabel() }}
       </button>
@@ -23,7 +23,7 @@ import { CommonModule } from '@angular/common';
   `,
 })
 export class EmptyStateComponent {
-  icon = input('📭');
+  icon = input('');
   title = input('Nothing here');
   message = input('No items to display');
   actionLabel = input('');

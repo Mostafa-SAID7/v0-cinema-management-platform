@@ -1,8 +1,8 @@
 import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type ButtonVariant = 'default' | 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon';
 
 @Component({
   selector: 'app-button',
@@ -12,7 +12,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
     <button
       [ngClass]="getButtonClasses()"
       [disabled]="disabled()"
-      class="inline-flex items-center justify-center font-medium rounded-lg transition-smooth focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+      [type]="type()"
     >
       <ng-content></ng-content>
     </button>
@@ -20,45 +20,45 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 })
 export class ButtonComponent {
   variant = input<ButtonVariant>('default');
-  size = input<ButtonSize>('md');
+  size = input<ButtonSize>('default');
   disabled = input(false);
-  glow = input(false);
+  type = input<'button' | 'submit' | 'reset'>('button');
 
   getButtonClasses(): string {
-    const baseClasses = this.getSizeClasses();
-    const variantClasses = this.getVariantClasses();
-    const glowClass = this.glow() ? 'neon-glow' : '';
-
-    return `${baseClasses} ${variantClasses} ${glowClass}`.trim();
+    const base =
+      'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50';
+    return `${base} ${this.getVariantClasses()} ${this.getSizeClasses()}`;
   }
 
   private getSizeClasses(): string {
     switch (this.size()) {
       case 'sm':
-        return 'px-3 py-1.5 text-sm';
+        return 'h-8 rounded-md px-3 text-xs';
       case 'lg':
-        return 'px-8 py-3 text-lg';
-      case 'md':
+        return 'h-10 rounded-md px-8';
+      case 'icon':
+        return 'h-9 w-9';
+      case 'default':
       default:
-        return 'px-6 py-2 text-base';
+        return 'h-9 px-4 py-2';
     }
   }
 
   private getVariantClasses(): string {
     switch (this.variant()) {
-      case 'primary':
-        return 'bg-primary text-primary-foreground hover:bg-primary/90';
-      case 'secondary':
-        return 'bg-secondary text-foreground hover:bg-secondary/80';
-      case 'outline':
-        return 'border border-border text-foreground hover:bg-secondary';
       case 'destructive':
-        return 'bg-destructive text-destructive-foreground hover:bg-destructive/90';
+        return 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90';
+      case 'outline':
+        return 'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground';
+      case 'secondary':
+        return 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80';
       case 'ghost':
-        return 'text-foreground hover:bg-secondary';
+        return 'hover:bg-accent hover:text-accent-foreground';
+      case 'link':
+        return 'text-primary underline-offset-4 hover:underline';
       case 'default':
       default:
-        return 'bg-secondary text-foreground hover:bg-secondary/80';
+        return 'bg-primary text-primary-foreground shadow hover:bg-primary/90';
     }
   }
 }

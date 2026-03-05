@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-card text-card-foreground rounded-lg border border-border overflow-hidden">
+    <div class="rounded-xl border bg-card text-card-foreground shadow">
       <ng-content></ng-content>
     </div>
   `,
@@ -18,7 +18,7 @@ export class CardComponent {}
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="px-6 py-4 border-b border-border">
+    <div class="flex flex-col space-y-1.5 p-6">
       <ng-content></ng-content>
     </div>
   `,
@@ -29,7 +29,11 @@ export class CardHeaderComponent {}
   selector: 'app-card-title',
   standalone: true,
   imports: [CommonModule],
-  template: ` <h2 class="text-2xl font-bold tracking-tight"><ng-content></ng-content></h2> `,
+  template: `
+    <h3 class="font-semibold leading-none tracking-tight">
+      <ng-content></ng-content>
+    </h3>
+  `,
 })
 export class CardTitleComponent {}
 
@@ -38,7 +42,7 @@ export class CardTitleComponent {}
   standalone: true,
   imports: [CommonModule],
   template: `
-    <p class="text-sm text-muted-foreground mt-1">
+    <p class="text-sm text-muted-foreground">
       <ng-content></ng-content>
     </p>
   `,
@@ -50,7 +54,7 @@ export class CardDescriptionComponent {}
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="px-6 py-4">
+    <div class="p-6 pt-0">
       <ng-content></ng-content>
     </div>
   `,
@@ -62,7 +66,7 @@ export class CardContentComponent {}
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="px-6 py-4 border-t border-border flex gap-3">
+    <div class="flex items-center p-6 pt-0">
       <ng-content></ng-content>
     </div>
   `,

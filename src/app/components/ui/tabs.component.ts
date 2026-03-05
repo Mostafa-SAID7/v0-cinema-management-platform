@@ -1,4 +1,4 @@
-import { Component, input, signal, ContentChildren, QueryList, AfterContentInit } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,8 +6,8 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-4">
-      <div class="flex gap-4 border-b border-border">
+    <div>
+      <div class="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
         <ng-content select="app-tabs-trigger"></ng-content>
       </div>
       <ng-content select="app-tabs-content"></ng-content>
@@ -25,11 +25,11 @@ export class TabsComponent {
   template: `
     <button
       (click)="setActive()"
-      [class.text-primary]="isActive()"
-      [class.border-b-2]="isActive()"
-      [class.border-primary]="isActive()"
-      [class.text-muted-foreground]="!isActive()"
-      class="px-4 py-2 font-medium transition-smooth"
+      [ngClass]="{
+        'bg-background text-foreground shadow': isActive(),
+        'text-muted-foreground': !isActive()
+      }"
+      class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
     >
       {{ label() }}
     </button>
@@ -60,7 +60,10 @@ export class TabsTriggerComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div *ngIf="isActive()" class="animate-scale-in">
+    <div
+      *ngIf="isActive()"
+      class="mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
       <ng-content></ng-content>
     </div>
   `,

@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Existing Packages -->
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="MailKit" Version="4.13.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
@@ -17,6 +18,29 @@
     <PackageReference Include="sib_api_v3_sdk" Version="4.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.0" />
+    
+    <!-- NEW: CQRS & Mediator Pattern -->
+    <PackageReference Include="MediatR" Version="12.2.0" />
+    
+    <!-- NEW: Validation -->
+    <PackageReference Include="FluentValidation" Version="11.9.0" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.0" />
+    
+    <!-- NEW: Object Mapping -->
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    
+    <!-- NEW: Caching -->
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
+    
+    <!-- NEW: Logging -->
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    
+    <!-- NEW: API Documentation -->
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.6.2" />
   </ItemGroup>
 
 </Project>

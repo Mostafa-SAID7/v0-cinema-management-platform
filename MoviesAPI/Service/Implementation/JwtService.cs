@@ -1,18 +1,13 @@
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MoviesAPI.Models.System;
+using MoviesAPI.Service.Interface;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace MoviesAPI.Service
+namespace MoviesAPI.Service.Implementation
 {
-    public interface IJwtService
-    {
-        string GenerateToken(User user);
-        ClaimsPrincipal? ValidateToken(string token);
-    }
-
     public class JwtService : IJwtService
     {
         private readonly JwtSettings _jwtSettings;

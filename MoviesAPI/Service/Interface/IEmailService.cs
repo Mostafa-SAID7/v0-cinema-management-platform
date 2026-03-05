@@ -1,10 +1,9 @@
-﻿using MoviesAPI.Models.System;
+using MoviesAPI.Models.System;
 
-namespace MoviesAPI.Service
+namespace MoviesAPI.Service.Interface
 {
     public interface IEmailService
     {
         Task SendEmailAsync(EmailMessage message);
     }
-
 }

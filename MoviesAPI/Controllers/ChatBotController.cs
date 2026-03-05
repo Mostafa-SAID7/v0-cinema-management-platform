@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MoviesAPI.Models;
 using MoviesAPI.Repositories.Interface;
-using MoviesAPI.Service;
+using MoviesAPI.Service.Interface;
+using MoviesAPI.Application.DTOs.Common;
 
 namespace MoviesAPI.Controllers
 {
@@ -23,61 +24,82 @@ namespace MoviesAPI.Controllers
 
         // GET: api/chatbot/faqs
         [HttpGet("faqs")]
-        public async Task<ActionResult<List<Faq>>> GetAllFaq()
+        [ProducesResponseType(typeof(BaseResponse<List<Faq>>), 200)]
+        public async Task<ActionResult<BaseResponse<List<Faq>>>> GetAllFaq()
         {
             var faqs = await _chatbotRepository.GetAllFaqAsync();
-            return Ok(faqs);
+            return Ok(BaseResponse<List<Faq>>.Success(faqs));
         }
 
         // GET: api/chatbot/faqs/{id}
         [HttpGet("faqs/{id}")]
-        public async Task<ActionResult<Faq>> GetFaqById(int id)
+        [ProducesResponseType(typeof(BaseResponse<Faq>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
+        public async Task<ActionResult<BaseResponse<Faq>>> GetFaqById(int id)
         {
             var faq = await _chatbotRepository.GetFaqByIdAsync(id);
-            if (faq == null) return NotFound();
-            return Ok(faq);
+            if (faq == null)
+                return NotFound(BaseResponse<object>.Failure("FAQ not found"));
+            
+            return Ok(BaseResponse<Faq>.Success(faq));
         }
 
         // POST: api/chatbot/faq
         [HttpPost("faq")]
-        public async Task<ActionResult> CreateFaq(Faq faq)
+        [ProducesResponseType(typeof(BaseResponse<Faq>), 201)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        public async Task<ActionResult<BaseResponse<Faq>>> CreateFaq(Faq faq)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(BaseResponse<object>.Failure(ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()));
+
             await _chatbotRepository.AddFaqAsync(faq);
-            return CreatedAtAction(nameof(GetFaqById), new { id = faq.Id }, faq);
+            return CreatedAtAction(nameof(GetFaqById), new { id = faq.Id }, BaseResponse<Faq>.Success(faq, "FAQ created successfully"));
         }
 
         // PUT: api/chatbot/faq/{id}
         [HttpPut("faq/{id}")]
-        public async Task<ActionResult> Update(int id, Faq faq)
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
+        public async Task<ActionResult<BaseResponse<object>>> Update(int id, Faq faq)
         {
-            if (id != faq.Id) return BadRequest();
+            if (id != faq.Id)
+                return BadRequest(BaseResponse<object>.Failure("ID mismatch"));
+            
             var existing = await _chatbotRepository.GetFaqByIdAsync(id);
-            if (existing == null) return NotFound();
+            if (existing == null)
+                return NotFound(BaseResponse<object>.Failure("FAQ not found"));
 
             await _chatbotRepository.UpdateFaqAsync(faq);
-            return NoContent();
+            return Ok(BaseResponse<object>.Success(null, "FAQ updated successfully"));
         }
 
         // DELETE: api/chatbot/faq/{id}
         [HttpDelete("faq/{id}")]
-        public async Task<ActionResult> Delete(int id)
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
+        public async Task<ActionResult<BaseResponse<object>>> Delete(int id)
         {
             var existing = await _chatbotRepository.GetFaqByIdAsync(id);
-            if (existing == null) return NotFound();
+            if (existing == null)
+                return NotFound(BaseResponse<object>.Failure("FAQ not found"));
 
             await _chatbotRepository.DeleteFaqAsync(id);
-            return NoContent();
+            return Ok(BaseResponse<object>.Success(null, "FAQ deleted successfully"));
         }
 
         // POST: api/chatbot/ask
         [HttpPost("ask")]
-        public async Task<ActionResult> Ask([FromBody] UserQuestionRequest request)
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        public async Task<ActionResult<BaseResponse<object>>> Ask([FromBody] UserQuestionRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Question))
-                return BadRequest(new { answer = "Please ask a question." });
+                return BadRequest(BaseResponse<object>.Failure("Please ask a question"));
 
             var answer = await _chatBotRagService.AskQuestionAsync(request.Question);
-            return Ok(new { answer });
+            return Ok(BaseResponse<object>.Success(new { answer }, "Question answered successfully"));
         }
 
         public class UserQuestionRequest

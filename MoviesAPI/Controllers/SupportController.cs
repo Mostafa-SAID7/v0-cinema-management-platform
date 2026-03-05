@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesAPI.Models.System;
-using MoviesAPI.Service;
+using MoviesAPI.Service.Interface;
+using MoviesAPI.Application.DTOs.Common;
 using System.Text;
 
 namespace MoviesAPI.Controllers
@@ -19,9 +20,11 @@ namespace MoviesAPI.Controllers
         }
 
         [HttpPost("contact")]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 500)]
         public async Task<IActionResult> SubmitContactForm([FromBody] SupportMessage supportMessage)
         {
-            // Server-side validation
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values
@@ -29,19 +32,14 @@ namespace MoviesAPI.Controllers
                     .Select(e => e.ErrorMessage)
                     .ToList();
 
-                return BadRequest(new
-                {
-                    message = "Validation failed",
-                    errors = errors
-                });
+                return BadRequest(BaseResponse<object>.Failure(errors));
             }
 
             try
             {
-                // Send email to support team
                 var emailMessage = new EmailMessage
                 {
-                    MailTo = "support@shoftv.com", // Your support email
+                    MailTo = "support@shoftv.com",
                     Subject = $"Support Request: {supportMessage.Subject}"
                 };
 
@@ -62,7 +60,6 @@ namespace MoviesAPI.Controllers
 
                 emailMessage.Content = sb.ToString();
 
-                // Send email (will fail if email service not configured, but that's okay for development)
                 try
                 {
                     await _emailService.SendEmailAsync(emailMessage);
@@ -70,30 +67,21 @@ namespace MoviesAPI.Controllers
                 catch (Exception emailEx)
                 {
                     _logger.LogWarning($"Failed to send email: {emailEx.Message}");
-                    // Continue anyway - we'll still return success to user
                 }
 
-                // Log the support request
                 _logger.LogInformation($"Support request received from {supportMessage.Email}: {supportMessage.Subject}");
 
-                return Ok(new
-                {
-                    message = "Your message has been sent successfully! We'll get back to you within 24 hours.",
-                    success = true
-                });
+                return Ok(BaseResponse<object>.Success(null, "Your message has been sent successfully! We'll get back to you within 24 hours."));
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error processing support request: {ex.Message}");
-                return StatusCode(500, new
-                {
-                    message = "An error occurred while sending your message. Please try again later.",
-                    success = false
-                });
+                return StatusCode(500, BaseResponse<object>.Failure("An error occurred while sending your message. Please try again later."));
             }
         }
 
         [HttpGet("faq")]
+        [ProducesResponseType(typeof(BaseResponse<object[]>), 200)]
         public IActionResult GetFAQ()
         {
             var faqs = new[]
@@ -124,7 +112,7 @@ namespace MoviesAPI.Controllers
                 }
             };
 
-            return Ok(faqs);
+            return Ok(BaseResponse<object[]>.Success(faqs));
         }
     }
 }

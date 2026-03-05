@@ -2,8 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesAPI.Models.System;
 using MoviesAPI.Repositories.Interface;
-using MoviesAPI.Service;
-using System.Reflection;
+using MoviesAPI.Service.Interface;
+using MoviesAPI.Application.DTOs.Common;
+using MoviesAPI.Application.DTOs.Requests.Users;
+using MoviesAPI.Application.DTOs.Responses.Users;
+using AutoMapper;
+using FluentValidation;
 using System.Text;
 
 namespace MoviesAPI.Controllers
@@ -15,108 +19,108 @@ namespace MoviesAPI.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
         private readonly IJwtService _jwtService;
+        private readonly IMapper _mapper;
+        private readonly IValidator<LoginRequest> _loginValidator;
+        private readonly IValidator<RegisterUserRequest> _registerValidator;
 
-        public AccountController(IUserRepository userRepository, IEmailService emailService, IJwtService jwtService)
+        public AccountController(
+            IUserRepository userRepository, 
+            IEmailService emailService, 
+            IJwtService jwtService,
+            IMapper mapper,
+            IValidator<LoginRequest> loginValidator,
+            IValidator<RegisterUserRequest> registerValidator)
         {
             _userRepository = userRepository;
             _emailService = emailService;
             _jwtService = jwtService;
+            _mapper = mapper;
+            _loginValidator = loginValidator;
+            _registerValidator = registerValidator;
         }
 
         [HttpPost("Login")]
+        [ProducesResponseType(typeof(BaseResponse<AuthenticationResponse>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 401)]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest("Invalid request");
+            var validationResult = await _loginValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+                return BadRequest(BaseResponse<object>.Failure(errors));
+            }
 
             var user = await _userRepository.GetUserByUsernameAndPassword(request.Username, request.Password);
 
             if (user == null)
-                return Unauthorized("Invalid username or password");
+                return Unauthorized(BaseResponse<object>.Failure("Invalid username or password"));
 
-            // Generate JWT token
             var token = _jwtService.GenerateToken(user);
 
-            var response = new LoginResponse
+            var response = new AuthenticationResponse
             {
                 Token = token,
-                User = user,
-                Error = null
+                User = _mapper.Map<UserResponse>(user),
+                ExpiresAt = DateTime.UtcNow.AddHours(24)
             };
 
-            return Ok(response);
+            return Ok(BaseResponse<AuthenticationResponse>.Success(response, "Login successful"));
         }
 
 
         [HttpPost("Logout")]
         [Authorize]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<IActionResult> Logout([FromBody] string username)
         {
             if (string.IsNullOrWhiteSpace(username))
-                return BadRequest("Username is required");
+                return BadRequest(BaseResponse<object>.Failure("Username is required"));
 
             var success = await _userRepository.LogoutUser(username);
 
             if (!success)
-                return NotFound("User not found or already logged out");
+                return NotFound(BaseResponse<object>.Failure("User not found or already logged out"));
 
-            return Ok(new { message = "Logout successful", username });
-
+            return Ok(BaseResponse<object>.Success(new { username }, "Logout successful"));
         }
 
         [HttpPost("Register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 409)]
+        public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest("Invalid request");
+            var validationResult = await _registerValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+                return BadRequest(BaseResponse<object>.Failure(errors));
+            }
 
             if (await _userRepository.IsEmailTakenAsync(request.Email))
-                return Conflict(new { message = "Email already registered." });
+                return Conflict(BaseResponse<object>.Failure("Email already registered"));
 
             var existingUser = await _userRepository.GetUserByUsername(request.Username);
             if (existingUser != null)
-                return Conflict(new { message = "Username already exists" });
+                return Conflict(BaseResponse<object>.Failure("Username already exists"));
 
-            // For development: Create user immediately without email confirmation
-            // In production, you would send email confirmation
-            request.isActive = true;
-            request.EmailConfirmed = true;
-            
             try
             {
-                var userId = await _userRepository.CreateUserAsync(request);
-                return Ok(new { message = "Registration successful! You can now log in." });
+                var registerRequest = _mapper.Map<RegisterRequest>(request);
+                registerRequest.isActive = true;
+                registerRequest.EmailConfirmed = true;
+                
+                var userId = await _userRepository.CreateUserAsync(registerRequest);
+                return Ok(BaseResponse<object>.Success(new { userId }, "Registration successful! You can now log in."));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error creating user", error = ex.Message });
+                return StatusCode(500, BaseResponse<object>.Failure($"Error creating user: {ex.Message}"));
             }
-
-            /* Original email confirmation flow - commented out for development
-            var token = Guid.NewGuid().ToString();
-            var confirmationLink = $"{Request.Scheme}://{Request.Host}/api/Account/ConfirmEmail?token={token}";
-            TempRegistrationStore.Add(token, request);
-
-            var emailMessage = new EmailMessage
-            {
-                MailTo = request.Email,
-                Subject = "Confirm your email"
-            };
-            var sb = new StringBuilder();
-            sb.AppendLine("<html>");
-            sb.AppendLine("<body>");
-            sb.AppendLine($"<p>Hi <strong>{request.Name}</strong>,</p>");
-            sb.AppendLine("<p>Thank you for registering at <strong>Movie App</strong>!</p>");
-            sb.AppendLine("<p>Please confirm your email by clicking the link below:</p>");
-            sb.AppendLine($"<p><a href='{confirmationLink}' style='background-color:#4CAF50;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;'>Confirm your email</a></p>");
-            sb.AppendLine("<p>If you did not register, please ignore this email.</p>");
-            sb.AppendLine("</body>");
-            sb.AppendLine("</html>");
-            emailMessage.Content = sb.ToString();
-
-            await _emailService.SendEmailAsync(emailMessage);
-            return Ok(new { message = "Confirmation email sent. Please check your email to complete registration." });
-            */
         }
 
         public static class TempRegistrationStore
@@ -137,11 +141,13 @@ namespace MoviesAPI.Controllers
         }
 
         [HttpGet("ConfirmEmail")]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
         {
             var pendingRequest = TempRegistrationStore.Get(token);
             if (pendingRequest == null)
-                return BadRequest("Invalid or expired token");
+                return BadRequest(BaseResponse<object>.Failure("Invalid or expired token"));
 
             var user = new User
             {
@@ -154,33 +160,28 @@ namespace MoviesAPI.Controllers
             pendingRequest.isActive = true;
             var userId = await _userRepository.CreateUserAsync(pendingRequest);
 
-            return Ok("Email confirmed and user account created! You can now log in.");
+            return Ok(BaseResponse<object>.Success(new { userId }, "Email confirmed and user account created! You can now log in."));
         }
 
         [HttpPost("ForgotPassword")]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Email))
-                return BadRequest("Email is required.");
+                return BadRequest(BaseResponse<object>.Failure("Email is required"));
 
             var user = await _userRepository.GetUserByEmailAsync(request.Email);
             if (user == null)
             {
-                // Always return success message to avoid exposing valid emails
-                return Ok(new { message = "If this email exists, a reset link has been sent." });
+                return Ok(BaseResponse<object>.Success(null, "If this email exists, a reset link has been sent."));
             }
 
-            // Generate a reset token
             var token = Guid.NewGuid().ToString();
-
-            // Store token temporarily (or use a proper DB table in production)
             TempResetPasswordStore.Add(token, request.Email);
 
-            // Build reset link
             var resetLink = $"https://localhost:7268/Account/ResetPassword?token={token}";
 
-
-            // Build email content
             var emailMessage = new EmailMessage
             {
                 MailTo = request.Email,
@@ -198,7 +199,7 @@ namespace MoviesAPI.Controllers
 
             await _emailService.SendEmailAsync(emailMessage);
 
-            return Ok(new { message = "If this email exists, a reset link has been sent." });
+            return Ok(BaseResponse<object>.Success(null, "If this email exists, a reset link has been sent."));
         }
 
         public static class TempResetPasswordStore
@@ -225,23 +226,22 @@ namespace MoviesAPI.Controllers
         }
 
         [HttpPost("ResetPassword")]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
             var email = TempResetPasswordStore.GetEmail(request.Token);
             if (email == null)
-                return BadRequest("Invalid or expired token.");
+                return BadRequest(BaseResponse<object>.Failure("Invalid or expired token"));
 
             var user = await _userRepository.GetUserByEmailAsync(email);
             if (user == null)
-                return BadRequest("User not found.");
+                return BadRequest(BaseResponse<object>.Failure("User not found"));
 
-            // Update password
-            user.Password = request.NewPassword; // in production, hash it!
+            user.Password = request.NewPassword;
             await _userRepository.UpdateUserPasswordAsync(user.Id, request.NewPassword);
 
-            return Ok(new { message = "Password successfully reset. You can now log in." });
+            return Ok(BaseResponse<object>.Success(null, "Password successfully reset. You can now log in."));
         }
-
-
     }
 }

@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MoviesAPI.Models.System;
-using MoviesAPI.Repositories.Implementation;
 using MoviesAPI.Repositories.Interface;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using MoviesAPI.Application.DTOs.Common;
+using MoviesAPI.Application.DTOs.Requests.Users;
+using MoviesAPI.Application.DTOs.Responses.Users;
+using AutoMapper;
+using FluentValidation;
 
 namespace MoviesAPI.Controllers
 {
@@ -12,106 +14,134 @@ namespace MoviesAPI.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
+        private readonly IValidator<RegisterUserRequest> _registerValidator;
+        private readonly IValidator<UpdateUserProfileRequest> _updateValidator;
 
-        public UsersController(IUserRepository userRepository)
+        public UsersController(
+            IUserRepository userRepository,
+            IMapper mapper,
+            IValidator<RegisterUserRequest> registerValidator,
+            IValidator<UpdateUserProfileRequest> updateValidator)
         {
             _userRepository = userRepository;
+            _mapper = mapper;
+            _registerValidator = registerValidator;
+            _updateValidator = updateValidator;
         }
 
 
-        // GET: api/<UsersController> or GET: api/movies
+        // GET: api/users
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> Get()
+        [ProducesResponseType(typeof(BaseResponse<List<UserSummaryResponse>>), 200)]
+        public async Task<ActionResult<BaseResponse<List<UserSummaryResponse>>>> Get()
         {
             var users = await _userRepository.GetUsersAsync();
-            return Ok(users);
+            var response = _mapper.Map<List<UserSummaryResponse>>(users);
+            return Ok(BaseResponse<List<UserSummaryResponse>>.Success(response));
         }
 
-        // GET api/<UsersController>/5
+        // GET api/users/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> Get(long id)
+        [ProducesResponseType(typeof(BaseResponse<UserResponse>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
+        public async Task<ActionResult<BaseResponse<UserResponse>>> Get(long id)
         {
             var user = await _userRepository.GetUserAsync(id);
 
             if (user == null)
-            {
-                return NotFound();
-            }
+                return NotFound(BaseResponse<object>.Failure("User not found"));
 
-            return Ok(user);
+            var response = _mapper.Map<UserResponse>(user);
+            return Ok(BaseResponse<UserResponse>.Success(response));
         }
 
-        // POST api/<UsersController>
+        // POST api/users
         [HttpPost]
-        public async Task<ActionResult> Post([FromForm] RegisterRequest user)
+        [ProducesResponseType(typeof(BaseResponse<long>), 201)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        public async Task<ActionResult<BaseResponse<long>>> Post([FromBody] RegisterUserRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var validationResult = await _registerValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+                return BadRequest(BaseResponse<object>.Failure(errors));
+            }
 
-            var id = await _userRepository.CreateUserAsync(user);
-            return Ok(id);
+            var registerRequest = _mapper.Map<RegisterRequest>(request);
+            var id = await _userRepository.CreateUserAsync(registerRequest);
+            
+            return CreatedAtAction(nameof(Get), new { id }, BaseResponse<long>.Success(id, "User created successfully"));
         }
 
-        // PUT api/<UsersController>/5
+        // PUT api/users
         [HttpPut]
-        public async Task<ActionResult> Put([FromForm] UserProfile user)
+        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
+        public async Task<ActionResult<BaseResponse<bool>>> Put([FromBody] UpdateUserProfileRequest request)
         {
-            var existing = await _userRepository.GetUserByUsername(user.Username);
+            var existing = await _userRepository.GetUserByUsername(request.Username);
             if (existing == null)
+                return NotFound(BaseResponse<object>.Failure("User not found"));
+
+            var validationResult = await _updateValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
             {
-                return NotFound();
+                var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+                return BadRequest(BaseResponse<object>.Failure(errors));
             }
 
-            if (!ModelState.IsValid)
+            var userProfile = new UserProfile
             {
-                return BadRequest();
-            }
+                Username = request.Username,
+                Name = request.Name,
+                Email = request.Email,
+                Phone = request.Phone
+            };
 
-            var result = await _userRepository.UpdateUserAsync(user);
-            return Ok(result);
+            var result = await _userRepository.UpdateUserAsync(userProfile);
+            return Ok(BaseResponse<bool>.Success(result, "User updated successfully"));
         }
 
-        // DELETE api/<UsersController>/5
+        // DELETE api/users/5
         [HttpDelete("{id}")]
+        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<IActionResult> Delete(int id)
         {
             var existing = await _userRepository.GetUserAsync(id);
             if (existing == null)
-                return NotFound();
+                return NotFound(BaseResponse<object>.Failure("User not found"));
 
             var result = await _userRepository.DeleteUserAsync(id);
-            return Ok(result);
+            return Ok(BaseResponse<bool>.Success(result, "User deleted successfully"));
         }
 
         // PUT api/users/5/role
         [HttpPut("{id}/role")]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<IActionResult> UpdateUserRole(int id, [FromBody] UpdateRoleRequest request)
         {
             var existing = await _userRepository.GetUserAsync(id);
             if (existing == null)
-            {
-                return NotFound(new { message = "User not found" });
-            }
+                return NotFound(BaseResponse<object>.Failure("User not found"));
 
             if (string.IsNullOrWhiteSpace(request.Role))
-            {
-                return BadRequest(new { message = "Role is required" });
-            }
+                return BadRequest(BaseResponse<object>.Failure("Role is required"));
 
-            // Validate role
             if (request.Role != "User" && request.Role != "Admin")
-            {
-                return BadRequest(new { message = "Invalid role. Must be 'User' or 'Admin'" });
-            }
+                return BadRequest(BaseResponse<object>.Failure("Invalid role. Must be 'User' or 'Admin'"));
 
             var result = await _userRepository.UpdateUserRoleAsync(id, request.Role);
             
             if (result > 0)
-            {
-                return Ok(new { message = "User role updated successfully" });
-            }
+                return Ok(BaseResponse<object>.Success(null, "User role updated successfully"));
 
-            return StatusCode(500, new { message = "Failed to update user role" });
+            return StatusCode(500, BaseResponse<object>.Failure("Failed to update user role"));
         }
     }
 

@@ -1,20 +1,73 @@
 using MoviesAPI.Models.System;
 using MoviesAPI.Repositories.Implementation;
 using MoviesAPI.Repositories.Interface;
-using MoviesAPI.Service;
+using MoviesAPI.Service.Interface;
+using MoviesAPI.Service.Implementation;
+using MoviesAPI.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Reflection;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("logs/shoftv-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
+builder.Host.UseSerilog();
+
+// Add services to the container.
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "ShofTV API",
+        Version = "v1",
+        Description = "Cinema booking platform API with comprehensive features"
+    });
+    
+    // Enable annotations
+    c.EnableAnnotations();
+    
+    // Add JWT authentication to Swagger
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
+// CORS Configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -22,6 +75,23 @@ builder.Services.AddCors(options =>
                         .AllowAnyMethod()
                         .AllowAnyHeader());
 });
+
+// FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+// AutoMapper
+builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
+
+// MediatR (for CQRS pattern - to be implemented)
+// builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
+// Memory Cache
+builder.Services.AddMemoryCache();
+
+// Response Caching
+builder.Services.AddResponseCaching();
 
 // Bind settings from appsettings.json
 builder.Services.Configure<DBSettings>(builder.Configuration.GetSection("DBSettings"));
@@ -81,6 +151,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Add Error Handling Middleware (MUST be first)
+app.UseErrorHandling();
+
 app.UseCors("AllowAll");
 
 app.UseResponseCaching();
@@ -93,4 +166,18 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+// Log application start
+Log.Information("ShofTV API started successfully");
+
+try
+{
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

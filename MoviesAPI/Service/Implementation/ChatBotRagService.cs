@@ -1,7 +1,8 @@
-﻿using MoviesAPI.Repositories.Interface;
+using MoviesAPI.Repositories.Interface;
+using MoviesAPI.Service.Interface;
 using System.Text;
 
-namespace MoviesAPI.Service
+namespace MoviesAPI.Service.Implementation
 {
     public class ChatBotRagService : IChatBotRagService
     {
@@ -83,7 +84,6 @@ namespace MoviesAPI.Service
                 contextBuilder.AppendLine($"No screenings found for {date}.");
             }
 
-
             if (contextBuilder.Length == 0)
             {
                 contextBuilder.AppendLine("No relevant FAQ or movie data found.");
@@ -102,77 +102,5 @@ namespace MoviesAPI.Service
             var answer = await _openAIService.AskQuestionAsync(prompt);
             return answer;
         }
-
-
-        //public async Task<string> AskQuestionAsync(string userQuestion)
-        //{
-        //    var contextBuilder = new StringBuilder();
-
-        //    var faqs = await _chatBotRepository.GetAllFaqAsync();
-        //    var matchedFaq = faqs.FirstOrDefault(f =>
-        //        f.Question.ToLower().Contains(userQuestion.ToLower()));
-
-        //    if (matchedFaq != null)
-        //    {
-        //        contextBuilder.AppendLine($"FAQ: {matchedFaq.Question}");
-        //        contextBuilder.AppendLine($"Answer: {matchedFaq.Answer}");
-        //        contextBuilder.AppendLine();
-        //    }
-
-        //    DateOnly date = DateOnly.FromDateTime(DateTime.Now);
-        //    if (userQuestion.ToLower().Contains("tomorrow"))
-        //        date = date.AddDays(1);
-
-        //    var screenings = await _screeningRepository.GetScreeningsAsync();
-
-        //    if (screenings != null && screenings.Any())
-        //    {
-        //        contextBuilder.AppendLine($"🎬 Screenings for {date}:");
-        //        foreach (var s in screenings)
-        //        {
-        //            var movie = await _movieRepository.GetMovieAsync(s.Movie_Id);
-        //            if (movie == null) continue;
-
-        //            int availableTickets = 0;
-        //            try
-        //            {
-        //                availableTickets = await _ticketRepository.GetPurchasedTicketsForChatbotAsync(
-        //                    s.Movie_Id,
-        //                    s.Screening_Date_Time
-        //                );
-        //            }
-        //            catch
-        //            {
-        //            }
-
-        //            contextBuilder.AppendLine(
-        //                $"- {movie.Name} at {s.Screening_Date_Time:HH:mm}, " +
-        //                $"tickets available: {availableTickets}");
-        //        }
-        //        contextBuilder.AppendLine();
-        //    }
-        //    else
-        //    {
-        //        contextBuilder.AppendLine($"No screenings found for {date}.");
-        //    }
-
-        //    if (contextBuilder.Length == 0)
-        //    {
-        //        contextBuilder.AppendLine("No relevant FAQ or movie data found.");
-        //    }
-
-        //    string prompt = $@"
-        //        You are a friendly cinema assistant.
-        //        Use the context below to answer the user's question as helpfully as possible.
-
-        //        Context:
-        //        {contextBuilder}
-
-        //        User Question: {userQuestion}
-        //        Answer:";
-
-        //    var answer = await _openAIService.AskQuestionAsync(prompt);
-        //    return answer;
-        //}
     }
 }

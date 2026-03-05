@@ -1,8 +1,9 @@
-﻿using System.Net.Http.Headers;
+using MoviesAPI.Service.Interface;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace MoviesAPI.Service
+namespace MoviesAPI.Service.Implementation
 {
     public class OpenAIService : IOpenAIService
     {
@@ -23,8 +24,8 @@ namespace MoviesAPI.Service
                 model = "gpt-3.5-turbo",
                 messages = new[]
                 {
-            new { role = "user", content = question }
-        },
+                    new { role = "user", content = question }
+                },
                 max_tokens = 200
             };
 
@@ -62,6 +63,5 @@ namespace MoviesAPI.Service
 
             return answer;
         }
-
     }
 }

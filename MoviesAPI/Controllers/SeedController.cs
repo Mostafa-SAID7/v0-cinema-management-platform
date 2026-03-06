@@ -11,20 +11,10 @@ namespace MoviesAPI.Controllers
     [ApiController]
     public class SeedController : ControllerBase
     {
-        private readonly IMovieRepository _movieRepository;
-        private readonly IScreeningRepository _screeningRepository;
-        private readonly IHallRepository _hallRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public SeedController(
-            IMovieRepository movieRepository,
-            IScreeningRepository screeningRepository,
-            IHallRepository hallRepository,
-            IUnitOfWork unitOfWork)
+        public SeedController(IUnitOfWork unitOfWork)
         {
-            _movieRepository = movieRepository;
-            _screeningRepository = screeningRepository;
-            _hallRepository = hallRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -114,7 +104,7 @@ namespace MoviesAPI.Controllers
                 var createdIds = new List<Guid>();
                 foreach (var movie in movies)
                 {
-                    var created = await _movieRepository.CreateMovieAsync(movie);
+                    var created = await _unitOfWork.Movies.CreateMovieAsync(movie);
                     createdIds.Add(created.Id);
                 }
                 await _unitOfWork.SaveChangesAsync();
@@ -138,12 +128,12 @@ namespace MoviesAPI.Controllers
         {
             try
             {
-                var movies = await _movieRepository.GetMoviesAsync();
+                var movies = await _unitOfWork.Movies.GetMoviesAsync();
                 
                 if (!movies.Any())
                     return BadRequest(BaseResponse<object>.Failure("No movies found. Please seed movies first."));
 
-                var halls = await _hallRepository.GetAllHallsAsync();
+                var halls = await _unitOfWork.Halls.GetAllHallsAsync();
                 if (!halls.Any())
                     return BadRequest(BaseResponse<object>.Failure("No halls found. Please create halls first."));
 
@@ -191,7 +181,7 @@ namespace MoviesAPI.Controllers
                 var createdIds = new List<Guid>();
                 foreach (var screening in screenings)
                 {
-                    var created = await _screeningRepository.CreateScreeningAsync(screening);
+                    var created = await _unitOfWork.Screenings.CreateScreeningAsync(screening);
                     createdIds.Add(created.Id);
                 }
                 await _unitOfWork.SaveChangesAsync();
@@ -238,3 +228,4 @@ namespace MoviesAPI.Controllers
         }
     }
 }
+

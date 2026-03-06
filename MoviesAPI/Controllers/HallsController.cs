@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MoviesAPI.Repositories.Interface;
 using MoviesAPI.Application.DTOs.Common;
 using MoviesAPI.Application.DTOs.Responses.Halls;
@@ -10,14 +10,12 @@ namespace MoviesAPI.Controllers
     [ApiController]
     public class HallsController : ControllerBase
     {
-        private readonly IHallRepository _hallRepository;
-        private readonly IScreeningRepository _screeningRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public HallsController(IHallRepository hallRepository, IScreeningRepository screeningRepository, IMapper mapper)
+        public HallsController(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _hallRepository = hallRepository;
-            _screeningRepository = screeningRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -26,7 +24,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<List<HallResponse>>), 200)]
         public async Task<IActionResult> GetAllHalls()
         {
-            var halls = await _hallRepository.GetAllHallsAsync();
+            var halls = await _unitOfWork.Halls.GetAllHallsAsync();
             var response = _mapper.Map<List<HallResponse>>(halls);
             return Ok(BaseResponse<List<HallResponse>>.Success(response));
         }
@@ -37,7 +35,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<IActionResult> GetHallById(Guid id)
         {
-            var hall = await _hallRepository.GetHallByIdAsync(id);
+            var hall = await _unitOfWork.Halls.GetHallByIdAsync(id);
             if (hall == null)
                 return NotFound(BaseResponse<object>.Failure("Hall not found"));
             
@@ -50,7 +48,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<List<HallSeatResponse>>), 200)]
         public async Task<IActionResult> GetSeatsByHallId(Guid id)
         {
-            var seats = await _hallRepository.GetSeatsByHallIdAsync(id);
+            var seats = await _unitOfWork.Halls.GetSeatsByHallIdAsync(id);
             var response = _mapper.Map<List<HallSeatResponse>>(seats);
             return Ok(BaseResponse<List<HallSeatResponse>>.Success(response));
         }
@@ -68,7 +66,7 @@ namespace MoviesAPI.Controllers
                 new TimeOnly(23,0,0)
             };
 
-            var bookedScreenings = await _screeningRepository.GetScreeningsByHallAndDateAsync(hallId, date);
+            var bookedScreenings = await _unitOfWork.Screenings.GetScreeningsByHallAndDateAsync(hallId, date);
 
             var bookedTimes = bookedScreenings
                   .Select(s => new TimeOnly(s.ScreeningDateTime.Hour, s.ScreeningDateTime.Minute, 0))
@@ -83,3 +81,4 @@ namespace MoviesAPI.Controllers
         }
     }
 }
+

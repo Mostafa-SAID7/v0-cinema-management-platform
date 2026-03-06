@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MoviesAPI.Domain.Entities.Movies;
 using MoviesAPI.Repositories.Interface;
 using MoviesAPI.Application.DTOs.Common;
@@ -14,24 +14,21 @@ namespace MoviesAPI.Controllers
     [ApiController]
     public class MoviesController : ControllerBase
     {
-        private readonly IMovieRepository _movieRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IValidator<CreateMovieRequest> _createValidator;
         private readonly IValidator<UpdateMovieRequest> _updateValidator;
-        private readonly IUnitOfWork _unitOfWork;
 
         public MoviesController(
-            IMovieRepository movieRepository,
+            IUnitOfWork unitOfWork,
             IMapper mapper,
             IValidator<CreateMovieRequest> createValidator,
-            IValidator<UpdateMovieRequest> updateValidator,
-            IUnitOfWork unitOfWork)
+            IValidator<UpdateMovieRequest> updateValidator)
         {
-            _movieRepository = movieRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
-            _unitOfWork = unitOfWork;
         }
 
 
@@ -40,7 +37,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<List<MovieSummaryResponse>>), 200)]
         public async Task<ActionResult<BaseResponse<List<MovieSummaryResponse>>>> Get()
         {
-            var movies = await _movieRepository.GetMoviesAsync();
+            var movies = await _unitOfWork.Movies.GetMoviesAsync();
             var response = _mapper.Map<List<MovieSummaryResponse>>(movies);
             return Ok(BaseResponse<List<MovieSummaryResponse>>.Success(response));
         }
@@ -51,7 +48,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<ActionResult<BaseResponse<MovieResponse>>> Get(Guid id)
         {
-            var movie = await _movieRepository.GetMovieAsync(id);
+            var movie = await _unitOfWork.Movies.GetMovieAsync(id);
 
             if (movie == null)
                 return NotFound(BaseResponse<object>.Failure("Movie not found"));
@@ -74,7 +71,7 @@ namespace MoviesAPI.Controllers
             }
 
             var movie = _mapper.Map<Movie>(request);
-            var created = await _movieRepository.CreateMovieAsync(movie);
+            var created = await _unitOfWork.Movies.CreateMovieAsync(movie);
             await _unitOfWork.SaveChangesAsync();
             
             return CreatedAtAction(nameof(Get), new { id = created.Id }, BaseResponse<Guid>.Success(created.Id, "Movie created successfully"));
@@ -87,7 +84,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<ActionResult<BaseResponse<object>>> Put(Guid id, [FromBody] UpdateMovieRequest request)
         {
-            var existing = await _movieRepository.GetMovieAsync(id);
+            var existing = await _unitOfWork.Movies.GetMovieAsync(id);
             if (existing == null)
                 return NotFound(BaseResponse<object>.Failure("Movie not found"));
 
@@ -99,7 +96,7 @@ namespace MoviesAPI.Controllers
             }
 
             _mapper.Map(request, existing);
-            await _movieRepository.UpdateMovieAsync(existing);
+            await _unitOfWork.Movies.UpdateMovieAsync(existing);
             await _unitOfWork.SaveChangesAsync();
             
             return Ok(BaseResponse<object>.Success(null, "Movie updated successfully"));
@@ -111,11 +108,11 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var existing = await _movieRepository.GetMovieAsync(id);
+            var existing = await _unitOfWork.Movies.GetMovieAsync(id);
             if (existing == null)
                 return NotFound(BaseResponse<object>.Failure("Movie not found"));
 
-            await _movieRepository.DeleteMovieAsync(existing);
+            await _unitOfWork.Movies.DeleteMovieAsync(existing);
             await _unitOfWork.SaveChangesAsync();
 
             return Ok(BaseResponse<object>.Success(null, "Movie deleted successfully"));
@@ -127,7 +124,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<ActionResult<BaseResponse<List<MovieSummaryResponse>>>> GetMoviesByGenre(string genreName)
         {
-            var movies = await _movieRepository.GetMoviesByGenreAsync(genreName);
+            var movies = await _unitOfWork.Movies.GetMoviesByGenreAsync(genreName);
             if (!movies.Any())
                 return NotFound(BaseResponse<object>.Failure($"No movies found for genre '{genreName}'"));
 
@@ -140,7 +137,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<List<string>>), 200)]
         public async Task<ActionResult<BaseResponse<List<string>>>> GetAllGenres()
         {
-            var genres = await _movieRepository.GetAllGenresAsync();
+            var genres = await _unitOfWork.Movies.GetAllGenresAsync();
             return Ok(BaseResponse<List<string>>.Success(genres));
         }
 
@@ -150,7 +147,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<ActionResult<BaseResponse<int>>> GetRatingOfUserForMovie(Guid idMovie, Guid idUser)
         {
-            var rating = await _movieRepository.GetRatingOfUserForMovieAsync(idMovie, idUser);
+            var rating = await _unitOfWork.Movies.GetRatingOfUserForMovieAsync(idMovie, idUser);
             if (rating == null)
                 return NotFound(BaseResponse<object>.Failure("Rating not found"));
 
@@ -163,7 +160,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<ActionResult<BaseResponse<List<MovieSummaryResponse>>>> GetTopNRated(int n)
         {
-            var movies = await _movieRepository.GetTopNMoviesAsync(n);
+            var movies = await _unitOfWork.Movies.GetTopNMoviesAsync(n);
 
             if (movies == null || movies.Count == 0)
                 return NotFound(BaseResponse<object>.Failure("No top rated movies found"));
@@ -188,10 +185,11 @@ namespace MoviesAPI.Controllers
                 Rating = request.Rating
             };
 
-            var saved = await _movieRepository.UpsertRatingAsync(rating);
+            var saved = await _unitOfWork.Movies.UpsertRatingAsync(rating);
             await _unitOfWork.SaveChangesAsync();
 
             return Ok(BaseResponse<object>.Success(new { success = true, message = "Rating saved successfully", rating = request.Rating }, "Rating saved successfully"));
         }
     }
 }
+

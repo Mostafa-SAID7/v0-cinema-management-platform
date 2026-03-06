@@ -6,3 +6,248 @@
 2026-03-06 02:55:19.512 +02:00 [INF] Content root path: C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI
 2026-03-06 02:55:30.764 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/swagger/index.html - null null
 2026-03-06 02:55:31.055 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/swagger/index.html - 200 null text/html;charset=utf-8 298.225ms
+2026-03-06 02:56:49.047 +02:00 [INF] ShofTV API started successfully
+2026-03-06 02:56:49.174 +02:00 [INF] User profile is available. Using 'C:\Users\Memo\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-06 02:56:49.302 +02:00 [INF] Now listening on: http://localhost:5272
+2026-03-06 02:56:49.308 +02:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-03-06 02:56:49.310 +02:00 [INF] Hosting environment: Development
+2026-03-06 02:56:49.312 +02:00 [INF] Content root path: C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI
+2026-03-06 02:56:54.559 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/swagger - null null
+2026-03-06 02:56:54.797 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/swagger - 301 0 null 240.8988ms
+2026-03-06 02:56:55.542 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/swagger/index.html - null null
+2026-03-06 02:56:55.665 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/swagger/index.html - 200 null text/html;charset=utf-8 123.5001ms
+2026-03-06 02:56:55.727 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/swagger/swagger-ui.css - null null
+2026-03-06 02:56:55.727 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/swagger/swagger-ui-bundle.js - null null
+2026-03-06 02:56:55.732 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/swagger/swagger-ui-standalone-preset.js - null null
+2026-03-06 02:56:55.861 +02:00 [INF] Sending file. Request path: '/swagger-ui-standalone-preset.js'. Physical path: 'N/A'
+2026-03-06 02:56:55.896 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/swagger/swagger-ui-standalone-preset.js - 200 230280 text/javascript 163.7714ms
+2026-03-06 02:56:55.862 +02:00 [INF] Sending file. Request path: '/swagger-ui.css'. Physical path: 'N/A'
+2026-03-06 02:56:55.940 +02:00 [INF] Sending file. Request path: '/swagger-ui-bundle.js'. Physical path: 'N/A'
+2026-03-06 02:56:55.959 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/swagger/swagger-ui.css - 200 152034 text/css 231.5127ms
+2026-03-06 02:56:55.961 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/swagger/swagger-ui-bundle.js - 200 1456926 text/javascript 233.3934ms
+2026-03-06 02:56:56.679 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/swagger/v1/swagger.json - null null
+2026-03-06 02:56:56.726 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/swagger/favicon-32x32.png - null null
+2026-03-06 02:56:56.745 +02:00 [INF] Sending file. Request path: '/favicon-32x32.png'. Physical path: 'N/A'
+2026-03-06 02:56:56.776 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/swagger/favicon-32x32.png - 200 628 image/png 49.8456ms
+2026-03-06 02:56:57.204 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 525.2361ms
+2026-03-06 02:58:05.134 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/api/movies - null null
+2026-03-06 02:58:05.135 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/api/movies/genres - null null
+2026-03-06 02:58:05.167 +02:00 [INF] CORS policy execution successful.
+2026-03-06 02:58:05.173 +02:00 [INF] CORS policy execution successful.
+2026-03-06 02:58:05.184 +02:00 [INF] No cached response available for this request.
+2026-03-06 02:58:05.199 +02:00 [INF] No cached response available for this request.
+2026-03-06 02:58:05.357 +02:00 [INF] Executing endpoint 'MoviesAPI.Controllers.MoviesController.GetAllGenres (MoviesAPI)'
+2026-03-06 02:58:05.357 +02:00 [INF] Executing endpoint 'MoviesAPI.Controllers.MoviesController.Get (MoviesAPI)'
+2026-03-06 02:58:05.413 +02:00 [INF] Route matched with {action = "Get", controller = "Movies"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[MoviesAPI.Application.DTOs.Common.BaseResponse`1[System.Collections.Generic.List`1[MoviesAPI.Application.DTOs.Responses.Movies.MovieSummaryResponse]]]] Get() on controller MoviesAPI.Controllers.MoviesController (MoviesAPI).
+2026-03-06 02:58:05.413 +02:00 [INF] Route matched with {action = "GetAllGenres", controller = "Movies"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[MoviesAPI.Application.DTOs.Common.BaseResponse`1[System.Collections.Generic.List`1[System.String]]]] GetAllGenres() on controller MoviesAPI.Controllers.MoviesController (MoviesAPI).
+2026-03-06 02:58:05.434 +02:00 [INF] Executed action MoviesAPI.Controllers.MoviesController.GetAllGenres (MoviesAPI) in 0.2873ms
+2026-03-06 02:58:05.434 +02:00 [INF] Executed action MoviesAPI.Controllers.MoviesController.Get (MoviesAPI) in 9.8647ms
+2026-03-06 02:58:05.442 +02:00 [INF] Executed endpoint 'MoviesAPI.Controllers.MoviesController.GetAllGenres (MoviesAPI)'
+2026-03-06 02:58:05.442 +02:00 [INF] Executed endpoint 'MoviesAPI.Controllers.MoviesController.Get (MoviesAPI)'
+2026-03-06 02:58:05.445 +02:00 [ERR] An unhandled exception occurred: Unable to resolve service for type 'MoviesAPI.Repositories.Interface.IMovieRepository' while attempting to activate 'MoviesAPI.Controllers.MoviesController'.
+System.InvalidOperationException: Unable to resolve service for type 'MoviesAPI.Repositories.Interface.IMovieRepository' while attempting to activate 'MoviesAPI.Controllers.MoviesController'.
+   at Microsoft.Extensions.DependencyInjection.ActivatorUtilities.ThrowHelperUnableToResolveService(Type type, Type requiredBy)
+   at lambda_method17(Closure, IServiceProvider, Object[])
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFactoryProvider.<>c__DisplayClass6_0.<CreateControllerFactory>g__CreateController|0(ControllerContext controllerContext)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.ResponseCaching.ResponseCachingMiddleware.Invoke(HttpContext httpContext)
+   at MoviesAPI.Middleware.ErrorHandlingMiddleware.InvokeAsync(HttpContext context) in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Middleware\ErrorHandlingMiddleware.cs:line 32
+2026-03-06 02:58:05.446 +02:00 [ERR] An unhandled exception occurred: Unable to resolve service for type 'MoviesAPI.Repositories.Interface.IMovieRepository' while attempting to activate 'MoviesAPI.Controllers.MoviesController'.
+System.InvalidOperationException: Unable to resolve service for type 'MoviesAPI.Repositories.Interface.IMovieRepository' while attempting to activate 'MoviesAPI.Controllers.MoviesController'.
+   at Microsoft.Extensions.DependencyInjection.ActivatorUtilities.ThrowHelperUnableToResolveService(Type type, Type requiredBy)
+   at lambda_method18(Closure, IServiceProvider, Object[])
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFactoryProvider.<>c__DisplayClass6_0.<CreateControllerFactory>g__CreateController|0(ControllerContext controllerContext)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.ResponseCaching.ResponseCachingMiddleware.Invoke(HttpContext httpContext)
+   at MoviesAPI.Middleware.ErrorHandlingMiddleware.InvokeAsync(HttpContext context) in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Middleware\ErrorHandlingMiddleware.cs:line 32
+2026-03-06 02:58:05.512 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/api/movies - 400 null application/json 378.4779ms
+2026-03-06 02:58:05.512 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/api/movies/genres - 400 null application/json 377.1475ms
+2026-03-06 02:58:06.525 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/api/movies - null null
+2026-03-06 02:58:06.525 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/api/movies/genres - null null
+2026-03-06 02:58:06.530 +02:00 [INF] CORS policy execution successful.
+2026-03-06 02:58:06.534 +02:00 [INF] CORS policy execution successful.
+2026-03-06 02:58:06.534 +02:00 [INF] No cached response available for this request.
+2026-03-06 02:58:06.538 +02:00 [INF] No cached response available for this request.
+2026-03-06 02:58:06.543 +02:00 [INF] Executing endpoint 'MoviesAPI.Controllers.MoviesController.Get (MoviesAPI)'
+2026-03-06 02:58:06.543 +02:00 [INF] Executing endpoint 'MoviesAPI.Controllers.MoviesController.GetAllGenres (MoviesAPI)'
+2026-03-06 02:58:06.544 +02:00 [INF] Route matched with {action = "Get", controller = "Movies"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[MoviesAPI.Application.DTOs.Common.BaseResponse`1[System.Collections.Generic.List`1[MoviesAPI.Application.DTOs.Responses.Movies.MovieSummaryResponse]]]] Get() on controller MoviesAPI.Controllers.MoviesController (MoviesAPI).
+2026-03-06 02:58:06.546 +02:00 [INF] Route matched with {action = "GetAllGenres", controller = "Movies"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[MoviesAPI.Application.DTOs.Common.BaseResponse`1[System.Collections.Generic.List`1[System.String]]]] GetAllGenres() on controller MoviesAPI.Controllers.MoviesController (MoviesAPI).
+2026-03-06 02:58:06.548 +02:00 [INF] Executed action MoviesAPI.Controllers.MoviesController.Get (MoviesAPI) in 0.2951ms
+2026-03-06 02:58:06.551 +02:00 [INF] Executed action MoviesAPI.Controllers.MoviesController.GetAllGenres (MoviesAPI) in 0.3433ms
+2026-03-06 02:58:06.554 +02:00 [INF] Executed endpoint 'MoviesAPI.Controllers.MoviesController.Get (MoviesAPI)'
+2026-03-06 02:58:06.556 +02:00 [INF] Executed endpoint 'MoviesAPI.Controllers.MoviesController.GetAllGenres (MoviesAPI)'
+2026-03-06 02:58:06.558 +02:00 [ERR] An unhandled exception occurred: Unable to resolve service for type 'MoviesAPI.Repositories.Interface.IMovieRepository' while attempting to activate 'MoviesAPI.Controllers.MoviesController'.
+System.InvalidOperationException: Unable to resolve service for type 'MoviesAPI.Repositories.Interface.IMovieRepository' while attempting to activate 'MoviesAPI.Controllers.MoviesController'.
+   at Microsoft.Extensions.DependencyInjection.ActivatorUtilities.ThrowHelperUnableToResolveService(Type type, Type requiredBy)
+   at lambda_method18(Closure, IServiceProvider, Object[])
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFactoryProvider.<>c__DisplayClass6_0.<CreateControllerFactory>g__CreateController|0(ControllerContext controllerContext)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.ResponseCaching.ResponseCachingMiddleware.Invoke(HttpContext httpContext)
+   at MoviesAPI.Middleware.ErrorHandlingMiddleware.InvokeAsync(HttpContext context) in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Middleware\ErrorHandlingMiddleware.cs:line 32
+2026-03-06 02:58:06.559 +02:00 [ERR] An unhandled exception occurred: Unable to resolve service for type 'MoviesAPI.Repositories.Interface.IMovieRepository' while attempting to activate 'MoviesAPI.Controllers.MoviesController'.
+System.InvalidOperationException: Unable to resolve service for type 'MoviesAPI.Repositories.Interface.IMovieRepository' while attempting to activate 'MoviesAPI.Controllers.MoviesController'.
+   at Microsoft.Extensions.DependencyInjection.ActivatorUtilities.ThrowHelperUnableToResolveService(Type type, Type requiredBy)
+   at lambda_method17(Closure, IServiceProvider, Object[])
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerFactoryProvider.<>c__DisplayClass6_0.<CreateControllerFactory>g__CreateController|0(ControllerContext controllerContext)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.ResponseCaching.ResponseCachingMiddleware.Invoke(HttpContext httpContext)
+   at MoviesAPI.Middleware.ErrorHandlingMiddleware.InvokeAsync(HttpContext context) in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Middleware\ErrorHandlingMiddleware.cs:line 32
+2026-03-06 02:58:06.565 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/api/movies - 400 null application/json 39.9632ms
+2026-03-06 02:58:06.577 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/api/movies/genres - 400 null application/json 52.3004ms
+2026-03-06 03:01:10.465 +02:00 [INF] ShofTV API started successfully
+2026-03-06 03:01:10.614 +02:00 [INF] User profile is available. Using 'C:\Users\Memo\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-06 03:01:10.778 +02:00 [INF] Now listening on: http://localhost:5272
+2026-03-06 03:01:10.787 +02:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-03-06 03:01:10.791 +02:00 [INF] Hosting environment: Development
+2026-03-06 03:01:10.794 +02:00 [INF] Content root path: C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI
+2026-03-06 03:01:22.164 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/api/movies - null null
+2026-03-06 03:01:22.241 +02:00 [INF] No cached response available for this request.
+2026-03-06 03:01:22.275 +02:00 [INF] Executing endpoint 'MoviesAPI.Controllers.MoviesController.Get (MoviesAPI)'
+2026-03-06 03:01:22.305 +02:00 [INF] Route matched with {action = "Get", controller = "Movies"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult`1[MoviesAPI.Application.DTOs.Common.BaseResponse`1[System.Collections.Generic.List`1[MoviesAPI.Application.DTOs.Responses.Movies.MovieSummaryResponse]]]] Get() on controller MoviesAPI.Controllers.MoviesController (MoviesAPI).
+2026-03-06 03:01:23.405 +02:00 [WRN] No store type was specified for the decimal property 'Rating' on entity type 'Movie'. This will cause values to be silently truncated if they do not fit in the default precision and scale. Explicitly specify the SQL server column type that can accommodate all the values in 'OnModelCreating' using 'HasColumnType', specify precision and scale using 'HasPrecision', or configure a value converter using 'HasConversion'.
+2026-03-06 03:01:25.665 +02:00 [ERR] Failed executing DbCommand (123ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [m].[id], [m].[actors], [m].[amount], [m].[created_at], [m].[created_by], [m].[deleted_at], [m].[deleted_by], [m].[directors], [m].[duration], [m].[genres], [m].[is_deleted], [m].[name], [m].[plot], [m].[poster_path], [m].[Rating], [m].[release_date], [m].[updated_at], [m].[updated_by], [t].[id], [t].[comment], [t].[created_at], [t].[created_by], [t].[deleted_at], [t].[deleted_by], [t].[is_deleted], [t].[movie_id], [t].[rating], [t].[updated_at], [t].[updated_by], [t].[user_id]
+FROM [movie] AS [m]
+LEFT JOIN (
+    SELECT [m0].[id], [m0].[comment], [m0].[created_at], [m0].[created_by], [m0].[deleted_at], [m0].[deleted_by], [m0].[is_deleted], [m0].[movie_id], [m0].[rating], [m0].[updated_at], [m0].[updated_by], [m0].[user_id]
+    FROM [movie_ratings] AS [m0]
+    WHERE [m0].[is_deleted] = CAST(0 AS bit)
+) AS [t] ON [m].[id] = [t].[movie_id]
+WHERE [m].[is_deleted] = CAST(0 AS bit)
+ORDER BY [m].[id]
+2026-03-06 03:01:25.706 +02:00 [ERR] An exception occurred while iterating over the results of a query for context type 'MoviesAPI.Data.ApplicationDbContext'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'movie_ratings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:904f9ec5-8a35-4fe4-822b-7fe7919c03a4
+Error Number:208,State:1,Class:16
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'movie_ratings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:904f9ec5-8a35-4fe4-822b-7fe7919c03a4
+Error Number:208,State:1,Class:16
+2026-03-06 03:01:25.730 +02:00 [INF] Executed action MoviesAPI.Controllers.MoviesController.Get (MoviesAPI) in 3415.3674ms
+2026-03-06 03:01:25.737 +02:00 [INF] Executed endpoint 'MoviesAPI.Controllers.MoviesController.Get (MoviesAPI)'
+2026-03-06 03:01:25.741 +02:00 [ERR] An unhandled exception occurred: Invalid object name 'movie_ratings'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'movie_ratings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at MoviesAPI.Repositories.Implementation.MovieRepository.GetMoviesAsync() in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Repositories\Implementation\MovieRepository.cs:line 16
+   at MoviesAPI.Controllers.MoviesController.Get() in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Controllers\MoviesController.cs:line 40
+   at lambda_method6(Closure, Object)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.AwaitableObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.ResponseCaching.ResponseCachingMiddleware.Invoke(HttpContext httpContext)
+   at MoviesAPI.Middleware.ErrorHandlingMiddleware.InvokeAsync(HttpContext context) in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Middleware\ErrorHandlingMiddleware.cs:line 32
+ClientConnectionId:904f9ec5-8a35-4fe4-822b-7fe7919c03a4
+Error Number:208,State:1,Class:16
+2026-03-06 03:01:25.787 +02:00 [ERR] Unhandled exception: Invalid object name 'movie_ratings'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'movie_ratings'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at MoviesAPI.Repositories.Implementation.MovieRepository.GetMoviesAsync() in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Repositories\Implementation\MovieRepository.cs:line 16
+   at MoviesAPI.Controllers.MoviesController.Get() in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Controllers\MoviesController.cs:line 40
+   at lambda_method6(Closure, Object)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.AwaitableObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.ResponseCaching.ResponseCachingMiddleware.Invoke(HttpContext httpContext)
+   at MoviesAPI.Middleware.ErrorHandlingMiddleware.InvokeAsync(HttpContext context) in C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI\Middleware\ErrorHandlingMiddleware.cs:line 32
+ClientConnectionId:904f9ec5-8a35-4fe4-822b-7fe7919c03a4
+Error Number:208,State:1,Class:16
+2026-03-06 03:01:25.851 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/api/movies - 500 null application/json 3690.7225ms

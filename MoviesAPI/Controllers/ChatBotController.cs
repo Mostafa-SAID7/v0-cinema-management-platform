@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MoviesAPI.Domain.Entities.Faqs;
 using MoviesAPI.Repositories.Interface;
 using MoviesAPI.Service.Interface;
@@ -14,23 +14,20 @@ namespace MoviesAPI.Controllers
     [ApiController]
     public class ChatBotController : ControllerBase
     {
-        private readonly IChatBotRepository _chatbotRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IOpenAIService _openAIService;
         private readonly IChatBotRagService _chatBotRagService;
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
         public ChatBotController(
-            IChatBotRepository chatbotRepository,
+            IUnitOfWork unitOfWork,
             IOpenAIService openAIService,
             IChatBotRagService chatBotRagService,
-            IUnitOfWork unitOfWork,
             IMapper mapper)
         {
-            _chatbotRepository = chatbotRepository;
+            _unitOfWork = unitOfWork;
             _openAIService = openAIService;
             _chatBotRagService = chatBotRagService;
-            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -39,7 +36,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<List<FaqResponse>>), 200)]
         public async Task<ActionResult<BaseResponse<List<FaqResponse>>>> GetAllFaq()
         {
-            var faqs = await _chatbotRepository.GetAllFaqAsync();
+            var faqs = await _unitOfWork.ChatBot.GetAllFaqAsync();
             var response = _mapper.Map<List<FaqResponse>>(faqs);
             return Ok(BaseResponse<List<FaqResponse>>.Success(response));
         }
@@ -50,7 +47,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<ActionResult<BaseResponse<FaqResponse>>> GetFaqById(Guid id)
         {
-            var faq = await _chatbotRepository.GetFaqByIdAsync(id);
+            var faq = await _unitOfWork.ChatBot.GetFaqByIdAsync(id);
             if (faq == null)
                 return NotFound(BaseResponse<object>.Failure("FAQ not found"));
             
@@ -67,7 +64,7 @@ namespace MoviesAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(BaseResponse<object>.Failure(ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()));
 
-            await _chatbotRepository.AddFaqAsync(faq);
+            await _unitOfWork.ChatBot.AddFaqAsync(faq);
             await _unitOfWork.SaveChangesAsync();
             
             var response = _mapper.Map<FaqResponse>(faq);
@@ -84,11 +81,11 @@ namespace MoviesAPI.Controllers
             if (id != faq.Id)
                 return BadRequest(BaseResponse<object>.Failure("ID mismatch"));
             
-            var existing = await _chatbotRepository.GetFaqByIdAsync(id);
+            var existing = await _unitOfWork.ChatBot.GetFaqByIdAsync(id);
             if (existing == null)
                 return NotFound(BaseResponse<object>.Failure("FAQ not found"));
 
-            await _chatbotRepository.UpdateFaqAsync(faq);
+            await _unitOfWork.ChatBot.UpdateFaqAsync(faq);
             await _unitOfWork.SaveChangesAsync();
             
             return Ok(BaseResponse<object>.Success(null, "FAQ updated successfully"));
@@ -100,11 +97,11 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
         public async Task<ActionResult<BaseResponse<object>>> Delete(Guid id)
         {
-            var faq = await _chatbotRepository.GetFaqByIdAsync(id);
+            var faq = await _unitOfWork.ChatBot.GetFaqByIdAsync(id);
             if (faq == null)
                 return NotFound(BaseResponse<object>.Failure("FAQ not found"));
 
-            await _chatbotRepository.DeleteFaqAsync(faq);
+            await _unitOfWork.ChatBot.DeleteFaqAsync(faq);
             await _unitOfWork.SaveChangesAsync();
             
             return Ok(BaseResponse<object>.Success(null, "FAQ deleted successfully"));

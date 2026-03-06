@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MoviesAPI.Models;
+using MoviesAPI.Domain.Entities.Tickets;
 using MoviesAPI.Repositories.Interface;
 using MoviesAPI.Application.DTOs.Common;
 using MoviesAPI.Application.DTOs.Requests.Tickets;
+using MoviesAPI.Application.DTOs.Responses.Tickets;
+using MoviesAPI.Data;
 using AutoMapper;
 using FluentValidation;
 
@@ -15,15 +17,18 @@ namespace MoviesAPI.Controllers
         private readonly ITicketRepository _ticketRepository;
         private readonly IMapper _mapper;
         private readonly IValidator<CreateTicketRequest> _createValidator;
+        private readonly IUnitOfWork _unitOfWork;
 
         public TicketsController(
             ITicketRepository ticketRepository,
             IMapper mapper,
-            IValidator<CreateTicketRequest> createValidator)
+            IValidator<CreateTicketRequest> createValidator,
+            IUnitOfWork unitOfWork)
         {
             _ticketRepository = ticketRepository;
             _mapper = mapper;
             _createValidator = createValidator;
+            _unitOfWork = unitOfWork;
         }
 
 
@@ -33,28 +38,30 @@ namespace MoviesAPI.Controllers
         public async Task<ActionResult<BaseResponse<List<TicketResponse>>>> Get()
         {
             var tickets = await _ticketRepository.GetTicketsAsync();
-            return Ok(BaseResponse<List<TicketResponse>>.Success(tickets.ToList()));
+            var response = _mapper.Map<List<TicketResponse>>(tickets);
+            return Ok(BaseResponse<List<TicketResponse>>.Success(response));
         }
 
         // GET api/tickets/5
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<MoviesAPI.Models.TicketResponse>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<TicketDetailsResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<MoviesAPI.Models.TicketResponse>>> Get(long id)
+        public async Task<ActionResult<BaseResponse<TicketDetailsResponse>>> Get(Guid id)
         {
             var ticket = await _ticketRepository.GetTicketAsync(id);
 
             if (ticket == null)
                 return NotFound(BaseResponse<object>.Failure("Ticket not found"));
 
-            return Ok(BaseResponse<MoviesAPI.Models.TicketResponse>.Success(ticket));
+            var response = _mapper.Map<TicketDetailsResponse>(ticket);
+            return Ok(BaseResponse<TicketDetailsResponse>.Success(response));
         }
 
         // POST api/tickets
         [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<long>), 201)]
+        [ProducesResponseType(typeof(BaseResponse<Guid>), 201)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        public async Task<ActionResult<BaseResponse<long>>> Post([FromBody] CreateTicketRequest request)
+        public async Task<ActionResult<BaseResponse<Guid>>> Post([FromBody] CreateTicketRequest request)
         {
             var validationResult = await _createValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -63,31 +70,27 @@ namespace MoviesAPI.Controllers
                 return BadRequest(BaseResponse<object>.Failure(errors));
             }
 
-            var ticket = new CreateTicket
-            {
-                Movie_Id = request.MovieId,
-                User_Id = request.UserId,
-                Watch_Movie = request.WatchDateTime,
-                Price = request.Price,
-                hall_seat_id = request.HallSeatId
-            };
+            var ticket = _mapper.Map<Ticket>(request);
+            var created = await _ticketRepository.CreateTicketAsync(ticket);
+            await _unitOfWork.SaveChangesAsync();
 
-            var id = await _ticketRepository.CreateTicketAsync(ticket);
-            return CreatedAtAction(nameof(Get), new { id }, BaseResponse<long>.Success(id, "Ticket created successfully"));
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, BaseResponse<Guid>.Success(created.Id, "Ticket created successfully"));
         }
 
         // DELETE api/tickets/5
         [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<int>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var existing = await _ticketRepository.GetTicketAsync(id);
             if (existing == null)
                 return NotFound(BaseResponse<object>.Failure("Ticket not found"));
 
-            var result = await _ticketRepository.DeleteTicketAsync(id);
-            return Ok(BaseResponse<int>.Success(result, "Ticket deleted successfully"));
+            await _ticketRepository.DeleteTicketAsync(existing);
+            await _unitOfWork.SaveChangesAsync();
+
+            return Ok(BaseResponse<object>.Success(null, "Ticket deleted successfully"));
         }
     }
 }

@@ -61,23 +61,20 @@ namespace MoviesAPI.Application.Validators.Movies
     {
         public UpdateMovieRequestValidator()
         {
-            RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Movie name is required")
-                .MaximumLength(200).WithMessage("Movie name cannot exceed 200 characters");
+            RuleFor(x => x.Title)
+                .NotEmpty().WithMessage("Movie title is required")
+                .MaximumLength(200).WithMessage("Movie title cannot exceed 200 characters");
 
             RuleFor(x => x.Duration)
                 .GreaterThan(0).WithMessage("Duration must be greater than 0 minutes")
                 .LessThanOrEqualTo(600).WithMessage("Duration cannot exceed 600 minutes");
 
-            RuleFor(x => x.Amount)
-                .GreaterThanOrEqualTo(0).WithMessage("Amount cannot be negative");
+            RuleFor(x => x.Description)
+                .MinimumLength(10).When(x => !string.IsNullOrEmpty(x.Description))
+                .WithMessage("Description must be at least 10 characters");
 
-            RuleFor(x => x.Plot)
-                .NotEmpty().WithMessage("Plot is required")
-                .MinimumLength(10).WithMessage("Plot must be at least 10 characters");
-
-            RuleFor(x => x.Genres)
-                .NotEmpty().WithMessage("At least one genre is required");
+            RuleFor(x => x.Genre)
+                .NotEmpty().WithMessage("Genre is required");
         }
     }
 

@@ -1,144 +1,79 @@
-using Dapper;
-using Microsoft.Extensions.Options;
-using MoviesAPI.Models;
-using MoviesAPI.Models.System;
+using Microsoft.EntityFrameworkCore;
+using MoviesAPI.Data;
+using MoviesAPI.Domain.Entities.Tickets;
 using MoviesAPI.Repositories.Interface;
-using Microsoft.Data.SqlClient;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MoviesAPI.Repositories.Implementation
 {
     public class TicketRepository : ITicketRepository
     {
-        private readonly DBSettings _dbSettings;
+        private readonly ApplicationDbContext _context;
 
-        public TicketRepository(IOptions<DBSettings> dbSettings)
+        public TicketRepository(ApplicationDbContext context)
         {
-            _dbSettings = dbSettings.Value;
+            _context = context;
         }
 
-        public async Task<IEnumerable<TicketResponse>> GetTicketsAsync()
+        public async Task<IEnumerable<Ticket>> GetTicketsAsync()
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-          
-
-            string sql = @"SELECT 
-                        t.id, 
-                        m.name AS moviename,
-                        m.poster_path AS posterpath,
-                        u.username AS username, 
-                        t.watch_movie, 
-                        t.price,
-                        H.id AS hallname,
-                        s.row_number AS row,
-                        s.seat_number AS column
-                    FROM ticket t
-                    INNER JOIN movie m ON t.movie_id = m.id
-                    INNER JOIN users u ON t.user_id = u.id
-                    INNER JOIN hall_seat s ON t.hall_seat_id = s.id
-                    INNER JOIN hall h ON s.hall_id = h.id;";
-
-            System.Diagnostics.Debug.WriteLine(sql);
-
-            var result = await conn.QueryAsync<TicketResponse>(sql);
-            System.Diagnostics.Debug.WriteLine("result" + result);
-
-
-            foreach (var ticket in result)
-            {
-
-                System.Diagnostics.Debug.WriteLine("ticket" + ticket);
-            }
-
-            return result;
+            return await _context.Tickets
+                .Include(t => t.Movie)
+                .Include(t => t.User)
+                .Include(t => t.HallSeat)
+                .ThenInclude(hs => hs.Hall)
+                .AsNoTracking()
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
         }
 
-        public async Task<TicketResponse> GetTicketAsync(long id)
+        public async Task<Ticket?> GetTicketAsync(Guid id)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = @"SELECT 
-                        t.id, 
-                        m.name AS moviename,
-                        m.poster_path AS posterpath,
-                        u.username AS username, 
-                        t.watch_movie, 
-                        t.price,
-                        H.id AS hallname,
-                        s.row_number AS row,
-                        s.seat_number AS column
-                    FROM ticket t
-                    INNER JOIN movie m ON t.movie_id = m.id
-                    INNER JOIN users u ON t.user_id = u.id
-                    INNER JOIN hall_seat s ON t.hall_seat_id = s.id
-                    INNER JOIN hall h ON s.hall_id = h.id
-                    WHERE t.id = @id;";
+            return await _context.Tickets
+                .Include(t => t.Movie)
+                .Include(t => t.User)
+                .Include(t => t.HallSeat)
+                .ThenInclude(hs => hs.Hall)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == id);
+        }
 
-            var ticket = await conn.QueryFirstOrDefaultAsync<TicketResponse>(sql, new { id });
+        public async Task<Ticket> CreateTicketAsync(Ticket ticket)
+        {
+            ticket.CreatedAt = DateTime.UtcNow;
+            await _context.Tickets.AddAsync(ticket);
             return ticket;
         }
 
-        //public async Task<UpdateTicket> GetTicketForUpdateAsync(long id)
-        //{
-        //    using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-        //    string sql = "SELECT watch_movie, amount FROM ticket WHERE id = @id";
-
-        //    var updateTicket = await conn.QueryFirstOrDefaultAsync<UpdateTicket>(sql, new { id });
-        //    return updateTicket;
-
-        //}
-
-        public async Task<int> CreateTicketAsync(CreateTicket ticket)
+        public Task UpdateTicketAsync(Ticket ticket)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"INSERT INTO ticket(movie_id, user_id, watch_movie, price)
-                   VALUES(@Movie_Id, @User_Id, @Watch_Movie, @Price);
-                   SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-            var id = await conn.ExecuteScalarAsync<int>(sql, ticket);
-
-            return id;
+            ticket.UpdatedAt = DateTime.UtcNow;
+            _context.Tickets.Update(ticket);
+            return Task.CompletedTask;
         }
 
-        //public async Task<int> UpdateTicketAsync(long id, UpdateTicket updateTicket)
-        //{
-        //    using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-        //    string sql = @"UPDATE ticket
-        //           SET watch_movie = @Watch_Movie,
-        //               price = @Price
-        //           WHERE id = @Id";
-
-        //    return await conn.ExecuteAsync(sql, new
-        //    {
-        //        Id = id,
-        //        updateTicket.Watch_Movie,
-        //        updateTicket.Price
-        //    });
-        //}
-
-        public async Task<int> DeleteTicketAsync(long id)
+        public Task DeleteTicketAsync(Ticket ticket)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = "DELETE FROM ticket WHERE id = @id";
-
-            return await conn.ExecuteAsync(sql, new { id });
-
+            ticket.SoftDelete();
+            _context.Tickets.Update(ticket);
+            return Task.CompletedTask;
         }
 
-        public async Task<int> GetPurchasedTicketsAsync(long movieId, DateTime showTime)
+        public async Task<int> GetPurchasedTicketsCountAsync(Guid movieId, DateTime showTime)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            var sql = @"
-                SELECT COUNT(*) 
-                FROM ticket 
-                WHERE movie_id = @MovieId AND watch_movie = @ShowTime"; 
-            return await conn.ExecuteScalarAsync<int>(sql, new { MovieId = movieId, ShowTime = showTime });
+            return await _context.Tickets
+                .CountAsync(t => t.MovieId == movieId && t.WatchDateTime == showTime);
         }
 
-      
-
-
+        public async Task<List<Ticket>> GetTicketsByUserIdAsync(Guid userId)
+        {
+            return await _context.Tickets
+                .Where(t => t.UserId == userId)
+                .Include(t => t.Movie)
+                .Include(t => t.HallSeat)
+                .ThenInclude(hs => hs.Hall)
+                .AsNoTracking()
+                .OrderByDescending(t => t.WatchDateTime)
+                .ToListAsync();
+        }
     }
 }

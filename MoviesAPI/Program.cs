@@ -5,12 +5,15 @@ using MoviesAPI.Service.Interface;
 using MoviesAPI.Service.Implementation;
 using MoviesAPI.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Reflection;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Serilog;
+using MoviesAPI.Domain.Entities.Users;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -98,6 +101,38 @@ builder.Services.Configure<DBSettings>(builder.Configuration.GetSection("DBSetti
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
+// Entity Framework Core - DbContext
+builder.Services.AddDbContext<MoviesAPI.Data.ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// ASP.NET Core Identity
+builder.Services.AddIdentity<MoviesAPI.Domain.Entities.Users.User, Microsoft.AspNetCore.Identity.IdentityRole<Guid>>(options =>
+{
+    // Password settings
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 8;
+    
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+    
+    // User settings
+    options.User.RequireUniqueEmail = true;
+    
+    // Sign in settings
+    options.SignIn.RequireConfirmedEmail = false;
+    options.SignIn.RequireConfirmedPhoneNumber = false;
+})
+.AddEntityFrameworkStores<MoviesAPI.Data.ApplicationDbContext>()
+.AddDefaultTokenProviders();
+
+// Unit of Work
+builder.Services.AddScoped<MoviesAPI.Data.IUnitOfWork, MoviesAPI.Data.UnitOfWork>();
+
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
 builder.Services.AddAuthentication(options =>
@@ -122,13 +157,8 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// Register repositories
-builder.Services.AddScoped<IMovieRepository, MovieRepository>();
-builder.Services.AddScoped<ITicketRepository, TicketRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IScreeningRepository, ScreeningRepository>();
-builder.Services.AddScoped<IHallRepository, HallRepository>();
-builder.Services.AddScoped<IChatBotRepository, ChatBotRepository>();
+// NOTE: Individual repositories are now accessed through UnitOfWork
+// No need to register them separately as they are instantiated by UnitOfWork
 
 // Register services
 builder.Services.AddScoped<IJwtService, JwtService>();

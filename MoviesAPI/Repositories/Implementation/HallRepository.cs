@@ -1,126 +1,50 @@
-using Dapper;
-using Microsoft.Extensions.Options;
-using MoviesAPI.Models;
-using MoviesAPI.Models.System;
+using Microsoft.EntityFrameworkCore;
+using MoviesAPI.Data;
+using MoviesAPI.Domain.Entities.Halls;
 using MoviesAPI.Repositories.Interface;
-using Microsoft.Data.SqlClient;
 
 namespace MoviesAPI.Repositories.Implementation
 {
     public class HallRepository : IHallRepository
     {
-        private readonly DBSettings _dbSettings;
+        private readonly ApplicationDbContext _context;
 
-        public HallRepository(IOptions<DBSettings> dbSettings)
+        public HallRepository(ApplicationDbContext context)
         {
-            _dbSettings = dbSettings.Value;
+            _context = context;
         }
 
-        public async Task<List<HallDto>> GetAllHallsAsync()
+        public async Task<List<Hall>> GetAllHallsAsync()
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = @"
-                    SELECT 
-                        h.id AS Id, 
-                        h.name AS Name,
-                        h.rows As Rows,
-                        h.seats_per_row AS Seats_Per_Row,
-                        hs.id AS SeatId, 
-                        hs.row_number AS RowNumber, 
-                        hs.seat_number AS SeatNumber
-                    FROM hall h
-                    LEFT JOIN hall_seat hs ON hs.hall_id = h.id
-                    ORDER BY h.id, hs.row_number, hs.seat_number;
-    ";
-
-            var hallDictionary = new Dictionary<int, HallDto>();
-
-            var result = await conn.QueryAsync<HallDto, HallSeatDto, HallDto>(
-                sql,
-                (hall, seat) =>
-                {
-                    if (!hallDictionary.TryGetValue(hall.Id, out var hallEntry))
-                    {
-                        hallEntry = new HallDto
-                        {
-                            Id = hall.Id,
-                            Name = hall.Name,
-                            Rows = hall.Rows,
-                            Seats_Per_Row = hall.Seats_Per_Row,
-                            Seats = new List<HallSeatDto>(),
-                        };
-                        hallDictionary.Add(hall.Id, hallEntry);
-                    }
-
-                    if (seat != null)
-                        hallEntry.Seats.Add(seat);
-
-                    return hallEntry;
-                },
-                splitOn: "SeatId"
-            );
-
-            return hallDictionary.Values.ToList();
+            return await _context.Halls
+                .Include(h => h.HallSeats)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-      
-
-        public async Task<HallDto> GetHallByIdAsync(int hallId)
+        public async Task<Hall?> GetHallByIdAsync(Guid hallId)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"
-                SELECT h.id, h.name,
-                       hs.id AS SeatId, hs.row_number AS RowNumber, hs.seat_number AS SeatNumber
-                FROM hall h
-                LEFT JOIN hall_seat hs ON hs.hall_id = h.id
-                WHERE h.id = @HallId
-                ORDER BY hs.row_number, hs.seat_number;
-            ";
-
-
-            var hallDictionary = new Dictionary<int, HallDto>();
-
-            var result = await conn.QueryAsync<HallDto, HallSeatDto, HallDto>(
-                sql,
-                (hall, seat) =>
-                {
-                    if (!hallDictionary.TryGetValue(hall.Id, out var hallEntry))
-                    {
-                        hallEntry = new HallDto
-                        {
-                            Id = hall.Id,
-                            Name = hall.Name,
-                            Seats = new List<HallSeatDto>()
-                        };
-                        hallDictionary.Add(hall.Id, hallEntry);
-                    }
-
-                    if (seat != null)
-                        hallEntry.Seats.Add(seat);
-
-                    return hallEntry;
-                },
-                new { HallId = hallId },
-                splitOn: "SeatId"
-            );
-
-            return hallDictionary.Values.FirstOrDefault();
+            return await _context.Halls
+                .Include(h => h.HallSeats)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(h => h.Id == hallId);
         }
 
-        public async Task<List<HallSeatDto>> GetSeatsByHallIdAsync(int hallId)
+        public async Task<List<HallSeat>> GetSeatsByHallIdAsync(Guid hallId)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
+            return await _context.HallSeats
+                .Where(hs => hs.HallId == hallId)
+                .AsNoTracking()
+                .OrderBy(hs => hs.RowNumber)
+                .ThenBy(hs => hs.SeatNumber)
+                .ToListAsync();
+        }
 
-            string sql = @"
-                SELECT id AS SeatId, hall_id AS HallId, row_number AS RowNumber,seat_number AS SeatNumber
-                FROM hall_seat
-                WHERE hall_id = @HallId
-                ORDER BY RowNumber, SeatNumber;
-            ";
-
-            var seats = await conn.QueryAsync<HallSeatDto>(sql, new { HallId = hallId });
-            return seats.ToList();
+        public async Task<HallSeat?> GetSeatByIdAsync(Guid seatId)
+        {
+            return await _context.HallSeats
+                .AsNoTracking()
+                .FirstOrDefaultAsync(hs => hs.Id == seatId);
         }
     }
 }

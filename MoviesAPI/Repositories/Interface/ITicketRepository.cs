@@ -1,16 +1,15 @@
-﻿using MoviesAPI.Models;
-using System.Threading.Tasks;
+﻿using MoviesAPI.Domain.Entities.Tickets;
 
 namespace MoviesAPI.Repositories.Interface
 {
     public interface ITicketRepository
     {
-        Task<IEnumerable<TicketResponse>> GetTicketsAsync();
-        Task<TicketResponse> GetTicketAsync(long id);
-        Task<int> CreateTicketAsync(CreateTicket ticket);
-        //Task<int> UpdateTicketAsync(long id, UpdateTicket ticket);
-        //Task<UpdateTicket> GetTicketForUpdateAsync(long id);
-        Task<int> DeleteTicketAsync(long id);
-        Task<int> GetPurchasedTicketsAsync(long movieId, DateTime showTime);
+        Task<IEnumerable<Ticket>> GetTicketsAsync();
+        Task<Ticket?> GetTicketAsync(Guid id);
+        Task<Ticket> CreateTicketAsync(Ticket ticket);
+        Task UpdateTicketAsync(Ticket ticket);
+        Task DeleteTicketAsync(Ticket ticket);
+        Task<int> GetPurchasedTicketsCountAsync(Guid movieId, DateTime showTime);
+        Task<List<Ticket>> GetTicketsByUserIdAsync(Guid userId);
     }
 }

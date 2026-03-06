@@ -1,25 +1,23 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using MoviesAPI.Models.System;
+﻿using MoviesAPI.Domain.Entities.Users;
 
 namespace MoviesAPI.Repositories.Interface
 {
+    /// <summary>
+    /// Repository interface for User entity operations
+    /// </summary>
     public interface IUserRepository
     {
         Task<IEnumerable<User>> GetUsersAsync();
-        Task<User> GetUserAsync(long id);
-        Task<User> GetUserByUsername(string username);
-        Task<int> CreateUserAsync(RegisterRequest user); 
-        Task<int> UpdateUserAsync(UserProfile user);
-        Task<UserProfile> GetUserForUpdateAsync(long id);
-        Task<int> DeleteUserAsync(long id);
-        Task<User> GetUserByUsernameAndPassword(string username, string password);
-        Task<bool> LogoutUser(string username);
+        Task<User?> GetUserByIdAsync(Guid id);
+        Task<User?> GetUserByUsernameAsync(string username);
+        Task<User?> GetUserByEmailAsync(string email);
+        Task<User> CreateUserAsync(User user);
+        Task UpdateUserAsync(User user);
+        Task DeleteUserAsync(User user);
         Task<bool> IsEmailTakenAsync(string email);
-        Task<User> GetUserByEmailAsync(string email);
-        Task<bool> UpdateUserPasswordAsync(int userId, string newPassword);
-        Task<int> UpdateUserRoleAsync(int userId, string role);
-
+        Task<bool> IsUsernameTakenAsync(string username);
+        Task<User?> GetUserByUsernameAndPasswordAsync(string username, string password);
+        Task UpdateUserPasswordAsync(Guid userId, string newPassword);
+        Task UpdateUserRoleAsync(Guid userId, string role);
     }
-
-   
 }

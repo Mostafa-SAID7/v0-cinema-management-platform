@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using MoviesAPI.Models.System;
-using MoviesAPI.Repositories.Interface;
+using MoviesAPI.Domain.Entities.Users;
 using MoviesAPI.Service.Interface;
 using MoviesAPI.Application.DTOs.Common;
 using MoviesAPI.Application.DTOs.Requests.Users;
 using MoviesAPI.Application.DTOs.Responses.Users;
+using MoviesAPI.Application.DTOs.Requests.Email;
 using AutoMapper;
 using FluentValidation;
-using System.Text;
 
 namespace MoviesAPI.Controllers
 {
@@ -16,22 +16,25 @@ namespace MoviesAPI.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly IUserRepository _userRepository;
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
         private readonly IEmailService _emailService;
         private readonly IJwtService _jwtService;
         private readonly IMapper _mapper;
-        private readonly IValidator<MoviesAPI.Application.DTOs.Requests.Users.LoginRequest> _loginValidator;
+        private readonly IValidator<LoginRequest> _loginValidator;
         private readonly IValidator<RegisterUserRequest> _registerValidator;
 
         public AccountController(
-            IUserRepository userRepository, 
+            UserManager<User> userManager,
+            SignInManager<User> signInManager,
             IEmailService emailService, 
             IJwtService jwtService,
             IMapper mapper,
-            IValidator<MoviesAPI.Application.DTOs.Requests.Users.LoginRequest> loginValidator,
+            IValidator<LoginRequest> loginValidator,
             IValidator<RegisterUserRequest> registerValidator)
         {
-            _userRepository = userRepository;
+            _userManager = userManager;
+            _signInManager = signInManager;
             _emailService = emailService;
             _jwtService = jwtService;
             _mapper = mapper;
@@ -43,7 +46,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<AuthenticationResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         [ProducesResponseType(typeof(BaseResponse<object>), 401)]
-        public async Task<IActionResult> Login([FromBody] MoviesAPI.Application.DTOs.Requests.Users.LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var validationResult = await _loginValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -52,12 +55,24 @@ namespace MoviesAPI.Controllers
                 return BadRequest(BaseResponse<object>.Failure(errors));
             }
 
-            var user = await _userRepository.GetUserByUsernameAndPassword(request.Username, request.Password);
-
+            var user = await _userManager.FindByNameAsync(request.Username);
             if (user == null)
                 return Unauthorized(BaseResponse<object>.Failure("Invalid username or password"));
 
-            var token = _jwtService.GenerateToken(user);
+            var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+            
+            if (result.IsLockedOut)
+                return Unauthorized(BaseResponse<object>.Failure("Account is locked out. Please try again later."));
+
+            if (!result.Succeeded)
+                return Unauthorized(BaseResponse<object>.Failure("Invalid username or password"));
+
+            // Update user activity
+            user.IsActive = true;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
+            var token = await _jwtService.GenerateToken(user);
 
             var response = new AuthenticationResponse
             {
@@ -69,21 +84,25 @@ namespace MoviesAPI.Controllers
             return Ok(BaseResponse<AuthenticationResponse>.Success(response, "Login successful"));
         }
 
-
         [HttpPost("Logout")]
         [Authorize]
         [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<IActionResult> Logout([FromBody] string username)
+        public async Task<IActionResult> Logout()
         {
+            var username = User.Identity?.Name;
             if (string.IsNullOrWhiteSpace(username))
-                return BadRequest(BaseResponse<object>.Failure("Username is required"));
+                return BadRequest(BaseResponse<object>.Failure("Invalid user"));
 
-            var success = await _userRepository.LogoutUser(username);
+            var user = await _userManager.FindByNameAsync(username);
+            if (user != null)
+            {
+                user.IsActive = false;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _userManager.UpdateAsync(user);
+            }
 
-            if (!success)
-                return NotFound(BaseResponse<object>.Failure("User not found or already logged out"));
+            await _signInManager.SignOutAsync();
 
             return Ok(BaseResponse<object>.Success(new { username }, "Logout successful"));
         }
@@ -101,21 +120,30 @@ namespace MoviesAPI.Controllers
                 return BadRequest(BaseResponse<object>.Failure(errors));
             }
 
-            if (await _userRepository.IsEmailTakenAsync(request.Email))
+            var existingUserByEmail = await _userManager.FindByEmailAsync(request.Email);
+            if (existingUserByEmail != null)
                 return Conflict(BaseResponse<object>.Failure("Email already registered"));
 
-            var existingUser = await _userRepository.GetUserByUsername(request.Username);
-            if (existingUser != null)
+            var existingUserByUsername = await _userManager.FindByNameAsync(request.Username);
+            if (existingUserByUsername != null)
                 return Conflict(BaseResponse<object>.Failure("Username already exists"));
 
             try
             {
-                var registerRequest = _mapper.Map<RegisterRequest>(request);
-                registerRequest.isActive = true;
-                registerRequest.EmailConfirmed = true;
+                var user = _mapper.Map<User>(request);
                 
-                var userId = await _userRepository.CreateUserAsync(registerRequest);
-                return Ok(BaseResponse<object>.Success(new { userId }, "Registration successful! You can now log in."));
+                var result = await _userManager.CreateAsync(user, request.Password);
+                
+                if (!result.Succeeded)
+                {
+                    var errors = result.Errors.Select(e => e.Description).ToList();
+                    return BadRequest(BaseResponse<object>.Failure(errors));
+                }
+
+                // Assign default role
+                await _userManager.AddToRoleAsync(user, "User");
+
+                return Ok(BaseResponse<object>.Success(new { userId = user.Id }, "Registration successful! You can now log in."));
             }
             catch (Exception ex)
             {
@@ -123,66 +151,25 @@ namespace MoviesAPI.Controllers
             }
         }
 
-        public static class TempRegistrationStore
-        {
-            public static Dictionary<string, RegisterRequest> PendingRegistrations = new();
-
-            public static void Add(string token, RegisterRequest request) => PendingRegistrations[token] = request;
-
-            public static RegisterRequest? Get(string token)
-            {
-                if (PendingRegistrations.TryGetValue(token, out var request))
-                {
-                    PendingRegistrations.Remove(token); // remove after retrieval
-                    return request;
-                }
-                return null;
-            }
-        }
-
-        [HttpGet("ConfirmEmail")]
-        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
-        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
-        {
-            var pendingRequest = TempRegistrationStore.Get(token);
-            if (pendingRequest == null)
-                return BadRequest(BaseResponse<object>.Failure("Invalid or expired token"));
-
-            var user = new User
-            {
-                Username = pendingRequest.Username,
-                Email = pendingRequest.Email,
-                Password = pendingRequest.Password,
-                IsActive = true
-            };
-
-            pendingRequest.isActive = true;
-            var userId = await _userRepository.CreateUserAsync(pendingRequest);
-
-            return Ok(BaseResponse<object>.Success(new { userId }, "Email confirmed and user account created! You can now log in."));
-        }
-
         [HttpPost("ForgotPassword")]
         [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        public async Task<IActionResult> ForgotPassword([FromBody] MoviesAPI.Application.DTOs.Requests.Users.ForgotPasswordRequest request)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Email))
                 return BadRequest(BaseResponse<object>.Failure("Email is required"));
 
-            var user = await _userRepository.GetUserByEmailAsync(request.Email);
+            var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
+                // Don't reveal that the user doesn't exist
                 return Ok(BaseResponse<object>.Success(null, "If this email exists, a reset link has been sent."));
             }
 
-            var token = Guid.NewGuid().ToString();
-            TempResetPasswordStore.Add(token, request.Email);
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetLink = $"{Request.Scheme}://{Request.Host}/api/Account/ResetPassword?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(request.Email)}";
 
-            var resetLink = $"https://localhost:7268/Account/ResetPassword?token={token}";
-
-            var emailMessage = new EmailMessage
+            var emailMessage = new EmailMessageRequest
             {
                 MailTo = request.Email,
                 Subject = "Reset Your Password",
@@ -202,46 +189,50 @@ namespace MoviesAPI.Controllers
             return Ok(BaseResponse<object>.Success(null, "If this email exists, a reset link has been sent."));
         }
 
-        public static class TempResetPasswordStore
-        {
-            public static Dictionary<string, string> PendingResets = new();
-
-            public static void Add(string token, string email) => PendingResets[token] = email;
-
-            public static string? GetEmail(string token)
-            {
-                if (PendingResets.TryGetValue(token, out var email))
-                {
-                    PendingResets.Remove(token); // remove after retrieval
-                    return email;
-                }
-                return null;
-            }
-        }
-
-        public class ResetPasswordRequest
-        {
-            public string Token { get; set; }
-            public string NewPassword { get; set; }
-        }
-
         [HttpPost("ResetPassword")]
         [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
-            var email = TempResetPasswordStore.GetEmail(request.Token);
-            if (email == null)
-                return BadRequest(BaseResponse<object>.Failure("Invalid or expired token"));
+            if (string.IsNullOrWhiteSpace(request.Email))
+                return BadRequest(BaseResponse<object>.Failure("Email is required"));
 
-            var user = await _userRepository.GetUserByEmailAsync(email);
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+                return BadRequest(BaseResponse<object>.Failure("Invalid request"));
+
+            var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+            
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return BadRequest(BaseResponse<object>.Failure(errors));
+            }
+
+            return Ok(BaseResponse<object>.Success(null, "Password successfully reset. You can now log in."));
+        }
+
+        [HttpPost("ConfirmEmail")]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+                return BadRequest(BaseResponse<object>.Failure("Invalid request"));
+
+            var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
                 return BadRequest(BaseResponse<object>.Failure("User not found"));
 
-            user.Password = request.NewPassword;
-            await _userRepository.UpdateUserPasswordAsync(user.Id, request.NewPassword);
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return BadRequest(BaseResponse<object>.Failure(errors));
+            }
 
-            return Ok(BaseResponse<object>.Success(null, "Password successfully reset. You can now log in."));
+            return Ok(BaseResponse<object>.Success(null, "Email confirmed successfully!"));
         }
     }
 }

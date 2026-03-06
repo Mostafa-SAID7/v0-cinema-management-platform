@@ -1,443 +1,135 @@
-using Dapper;
-using Microsoft.Extensions.Options;
-using MoviesAPI.Models;
-using MoviesAPI.Models.System;
+using Microsoft.EntityFrameworkCore;
+using MoviesAPI.Data;
+using MoviesAPI.Domain.Entities.Movies;
 using MoviesAPI.Repositories.Interface;
-using Microsoft.Data.SqlClient;
-using System.Data.Common;
-using System.Runtime;
-using System.Transactions;
 
 namespace MoviesAPI.Repositories.Implementation
 {
-    public class MovieRepository : IMovieRepository
+    public class MovieRepository : GenericRepository<Movie>, IMovieRepository
     {
-        private readonly DBSettings _dbSettings;
-
-        public MovieRepository(IOptions<DBSettings> dbSettings)
+        public MovieRepository(ApplicationDbContext context) : base(context)
         {
-            _dbSettings = dbSettings.Value;
         }
 
-       public async Task<IEnumerable<Movie>> GetMoviesAsync()
+        public async Task<IEnumerable<Movie>> GetMoviesAsync()
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = @"SELECT m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors,
-                                  string_agg(g.name, ', ') AS Genres
-                           FROM movie m
-                           INNER JOIN moviegenres mg ON m.id = mg.movieid
-                           INNER JOIN genres g ON mg.genreid = g.id
-                           GROUP BY m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors
-                           ORDER BY m.id;";
-
-            var movies = (await conn.QueryAsync<Movie>(sql)).ToList();
-
-            foreach (var movie in movies)
-            {
-                (decimal weightedRating, List<MovieRating> ratings) = await GetRatingsForMovieAsync(movie.Id);
-                movie.Rating = weightedRating;
-                movie.Ratings = ratings;
-            }
-
-            return movies;
+            return await _context.Movies
+                .Include(m => m.Ratings)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Movie>> GetMoviesByGenreAsync(string genre)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = @"SELECT m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors,
-                                  string_agg(g.name, ', ') AS Genres
-                           FROM movie m
-                           INNER JOIN moviegenres mg ON m.id = mg.movieid
-                           INNER JOIN genres g ON mg.genreid = g.id
-                           WHERE m.id IN (
-                              SELECT m2.id
-                              FROM movie m2
-                              INNER JOIN moviegenres mg2 ON m2.id = mg2.movieid
-                              INNER JOIN genres g2 ON mg2.genreid = g2.id
-                              WHERE LOWER(g2.name) = LOWER(@GenreName)
-                           )
-                           GROUP BY m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors
-                           ORDER BY m.id;";
-
-            var movies = await conn.QueryAsync<Movie>(sql, new { GenreName = genre });
-
-            foreach (var movie in movies)
-            {
-                (decimal weightedRating, List<MovieRating> ratings) = await GetRatingsForMovieAsync(movie.Id);
-                movie.Rating = weightedRating;
-                movie.Ratings = ratings;
-
-            }
-
-            return movies;
+            return await _context.Movies
+                .Where(m => m.Genres.Contains(genre))
+                .Include(m => m.Ratings)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public async Task<Movie> GetMovieAsync(long id)
+        public async Task<Movie?> GetMovieAsync(Guid id)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-           
+            return await _context.Movies
+                .Include(m => m.Ratings)
+                .ThenInclude(r => r.User)
+                .Include(m => m.Screenings)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == id);
+        }
 
-            string sql = @"SELECT m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors,
-                                  string_agg(g.name, ', ') AS Genres
-                           FROM movie m
-                           INNER JOIN moviegenres mg ON m.id = mg.movieid
-                           INNER JOIN genres g ON mg.genreid = g.id
-                           WHERE m.id = @id
-                           GROUP BY m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors
-                           ORDER BY m.id;";
-
-
-            var movie = await conn.QueryFirstOrDefaultAsync<Movie>(sql, new { Id=id });
-
-            if (movie != null)
-            {
-                (decimal weightedRating, List<MovieRating> ratings) = await GetRatingsForMovieAsync(movie.Id);
-                movie.Rating = weightedRating;
-                movie.Ratings = ratings;
-            }
-
+        public async Task<Movie> CreateMovieAsync(Movie movie)
+        {
+            await _context.Movies.AddAsync(movie);
             return movie;
         }
 
-        public async Task<CreateAndUpdateMovie> GetMovieForUpdateAsync(long id)
+        public Task UpdateMovieAsync(Movie movie)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = "SELECT name, duration, release_date, amount, poster_path, plot, actors, directors FROM movie WHERE id = @id";
-
-            var updateMovie = await conn.QueryFirstOrDefaultAsync<CreateAndUpdateMovie>(sql, new { id });
-            return updateMovie;
-
+            movie.UpdatedAt = DateTime.UtcNow;
+            _context.Movies.Update(movie);
+            return Task.CompletedTask;
         }
 
-        public async Task<int> CreateMovieAsync(CreateAndUpdateMovie movie)
+        public Task DeleteMovieAsync(Movie movie)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            await conn.OpenAsync();
-
-            using var transaction = await conn.BeginTransactionAsync();
-
-            try
-            {
-                string movieSql = @"
-            INSERT INTO movie(name, duration, release_date, amount, poster_path, plot, actors, directors)
-            VALUES(@Name, @Duration, @Release_Date, @Amount, @Poster_Path, @Plot, @Actors, @Directors);
-            SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-                var movieId = await conn.ExecuteScalarAsync<int>(movieSql, movie, transaction);
-
-                // Get genre IDs for each genre name
-                string genreSql = "INSERT INTO moviegenres(movieid, genreid) VALUES(@MovieId, @GenreId);";
-
-                foreach (var genreName in movie.Genres)
-                {
-                    string genreIdSql = "SELECT id FROM genres WHERE name = @Name;";
-                    var genreId = await conn.ExecuteScalarAsync<int?>(genreIdSql, new { Name = genreName }, transaction);
-                    
-                    if (genreId.HasValue)
-                    {
-                        await conn.ExecuteAsync(genreSql, new { MovieId = movieId, GenreId = genreId.Value }, transaction);
-                    }
-                }
-
-                await transaction.CommitAsync();
-
-                return movieId;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-
+            movie.SoftDelete();
+            _context.Movies.Update(movie);
+            return Task.CompletedTask;
         }
 
-        public async Task<int> UpdateMovieAsync(long id, CreateAndUpdateMovie updateMovie)
+        public async Task<List<string>> GetAllGenresAsync()
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            await conn.OpenAsync();
-            using var transaction = await conn.BeginTransactionAsync();
+            var genres = await _context.Movies
+                .Where(m => !string.IsNullOrEmpty(m.Genres))
+                .Select(m => m.Genres)
+                .Distinct()
+                .ToListAsync();
 
-            try
-            {
-                string sql = @"UPDATE movie
-                       SET name = @Name,
-                           duration = @Duration,
-                           release_date = @Release_Date,
-                           amount = @Amount,
-                           poster_path = @Poster_Path,
-                           plot = @Plot,
-                           actors = @Actors,
-                           directors = @Directors
-                       WHERE id = @Id";
-
-                await conn.ExecuteAsync(sql, new
-                {
-                    Id = id,
-                    updateMovie.Name,
-                    updateMovie.Duration,
-                    updateMovie.Release_Date,
-                    updateMovie.Amount,
-                    updateMovie.Poster_Path,
-                    updateMovie.Plot,
-                    updateMovie.Actors,
-                    updateMovie.Directors
-                }, transaction);
-
-                string existingSql = "SELECT g.name FROM moviegenres mg JOIN genres g ON mg.genreid = g.id WHERE mg.movieid = @MovieId;";
-                var existingGenres = (await conn.QueryAsync<string>(existingSql, new { MovieId = id }, transaction)).ToList();
-
-                var newGenres = updateMovie.Genres ?? new List<string>();
-
-                var genresToAdd = newGenres.Except(existingGenres).ToList();
-                var genresToRemove = existingGenres.Except(newGenres).ToList();
-
-                if (genresToRemove.Count > 0)
-                {
-                    string removeSql = @"DELETE FROM moviegenres 
-                                 WHERE movieid = @MovieId AND genreid = ANY(
-                                     SELECT id FROM genres WHERE name = ANY(@Names)
-                                 );";
-                    await conn.ExecuteAsync(removeSql, new { MovieId = id, Names = genresToRemove }, transaction);
-                }
-
-                if (genresToAdd.Count > 0)
-                {
-                    string genreIdSql = "SELECT id FROM genres WHERE name = ANY(@Names);";
-                    var genreIds = (await conn.QueryAsync<int>(genreIdSql, new { Names = genresToAdd }, transaction)).ToList();
-
-                    string insertSql = "INSERT INTO moviegenres(movieid, genreid) VALUES(@MovieId, @GenreId);";
-                    foreach (var genreId in genreIds)
-                    {
-                        await conn.ExecuteAsync(insertSql, new { MovieId = id, GenreId = genreId }, transaction);
-                    }
-                }
-
-                await transaction.CommitAsync();
-                return 1;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            return genres
+                .SelectMany(g => g.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .Select(g => g.Trim())
+                .Distinct()
+                .OrderBy(g => g)
+                .ToList();
         }
 
-        public async Task<int> DeleteMovieAsync(long id)
+        public async Task<(decimal WeightedRating, List<MovieRating> Ratings)> GetRatingsForMovieAsync(Guid movieId)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
+            var ratings = await _context.MovieRatings
+                .Where(mr => mr.MovieId == movieId)
+                .Include(mr => mr.User)
+                .AsNoTracking()
+                .ToListAsync();
 
-            string sql = "delete from movie where id = @id";
+            if (!ratings.Any())
+                return (0, new List<MovieRating>());
 
-            return await conn.ExecuteAsync(sql, new { id });
-
-        }
-
-        public async Task<IEnumerable<FutureMovie>> GetFutureMoviesAsync()
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = "SELECT id, name, genres, poster_path FROM futuremovies ORDER BY id;";
-
-
-            var result = await conn.QueryAsync<FutureMovie>(sql);
-
-            return result;
-
-        }
-
-        public async Task<FutureMovie> GetFutureMovieAsync(long id)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = "SELECT id, name, genres, poster_path FROM futuremovies WHERE id = @Id;";
-
-
-            var result = await conn.QueryFirstOrDefaultAsync<FutureMovie>(sql, new { Id= id } );
-
-            return result;
-        }
-
-        public async Task<int> CreateFutureMovieAsync(CreateFutureMovie movie)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"
-            INSERT INTO futuremovies (name, genres, poster_path)
-            VALUES(@Name,@Genres, @Poster_Path);
-            SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-            var movieId = await conn.ExecuteScalarAsync<int>(sql, new
-            {
-                movie.Name,
-                movie.Genres,
-                movie.Poster_Path
-            });
-
-            return movieId;
-        }
-
-     
-
-        public async Task<int> DeleteFutureMovieAsync(long id)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = "delete from futuremovies where id = @id";
-
-            return await conn.ExecuteAsync(sql, new { id });
-        }
-
-        public async Task<List<string>> GettAllGenresAsync()
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = "SELECT name FROM genres ";
-
-            var genres = await conn.QueryAsync<string>(sql);
-            return genres.ToList();
-        }
-
-        public async Task<(decimal WeightedRating, List<MovieRating> Ratings)> GetRatingsForMovieAsync(long movieId)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string ratingsSql = @"
-                SELECT r.id AS Id, r.user_id AS UserId, r.movie_id AS MovieId, r.rating AS Rating, r.comment AS Comment,
-                       u.username AS UserName
-                FROM movieratings r
-                JOIN users u ON r.user_id = u.id
-                WHERE r.movie_id = @MovieId;
-            ";
-            var ratings = (await conn.QueryAsync<MovieRating>(ratingsSql, new { MovieId = movieId })).ToList();
-
-
-
-
-            string weightedSql = @"
-                WITH movie_stats AS (
-                    SELECT 
-                        COUNT(r.rating) AS rating_count,
-                        ISNULL(AVG(r.rating), 0) AS avg_rating
-                    FROM movieratings r
-                    WHERE r.movie_id = @MovieId
-                ),
-                global_avg AS (
-                    SELECT ISNULL(AVG(rating), 0) AS C FROM movieratings
-                ),
-                user_count AS (
-                    SELECT COUNT(*) AS total_users FROM users
-                )
-                SELECT 
-                    CASE 
-                        WHEN ms.rating_count = 0 OR uc.total_users = 0 THEN 0
-                        ELSE ((CAST(ms.rating_count AS FLOAT) / (ms.rating_count + uc.total_users * 0.55)) * ms.avg_rating
-                             + ((uc.total_users * 0.55) / (ms.rating_count + uc.total_users * 0.55)) * ga.C)
-                    END AS weighted_rating
-                FROM movie_stats ms
-                CROSS JOIN global_avg ga
-                CROSS JOIN user_count uc;
-            ";
-
-            var weightedRating = await conn.ExecuteScalarAsync<decimal?>(weightedSql, new { MovieId = movieId }) ?? 0;
-
-
+            var weightedRating = (decimal)ratings.Average(r => r.Rating);
             return (weightedRating, ratings);
-
         }
 
-
-        public async Task<MovieRating?> GetRatingOfUserForMovieAsync(long movieId, long userId)
+        public async Task<MovieRating?> GetRatingOfUserForMovieAsync(Guid movieId, Guid userId)
         {
-
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"
-                SELECT r.id AS Id, r.user_id AS UserId, r.movie_id AS MovieId, r.rating AS Rating, r.comment AS Comment,
-                       u.username AS UserName
-                FROM movieratings r
-                JOIN users u ON r.user_id = u.id
-                WHERE r.movie_id = @MovieId AND r.user_id = @UserId;
-            ";
-
-
-            var result = await conn.QueryFirstOrDefaultAsync<MovieRating>(sql, new { MovieId = movieId,  UserId=userId });
-
-            return result;
-
+            return await _context.MovieRatings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(mr => mr.MovieId == movieId && mr.UserId == userId);
         }
-
-
-
-        public async Task<bool> UpsertRating(CreateRating rating)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-                    string sql = @"
-                INSERT INTO movieratings (movie_id, user_id, rating,comment)
-                VALUES (@MovieId, @UserId, @Rating,@Comment)
-                ON CONFLICT (movie_id, user_id) 
-                DO UPDATE SET rating = EXCLUDED.rating,
-                              comment = EXCLUDED.comment;
-            ";
-
-            var rows = await conn.ExecuteAsync(sql, new 
-            {
-                MovieId = rating.MovieId,
-                UserId = rating.UserId,
-                Rating = rating.Rating,
-                Comment = rating.Comment
-            });
-            return rows > 0;
-        }
-
-
 
         public async Task<List<Movie>> GetTopNMoviesAsync(int n)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
+            var moviesWithRatings = await _context.Movies
+                .Include(m => m.Ratings)
+                .AsNoTracking()
+                .ToListAsync();
 
-            string sql = @"
-                WITH movie_stats AS (
-                    SELECT 
-                        m.*,
-                        COUNT(r.rating) AS rating_count,
-                        ISNULL(AVG(r.rating), 0) AS avg_rating
-                    FROM movie m
-                    LEFT JOIN movieratings r ON m.id = r.movie_id
-                    GROUP BY m.id, m.name, m.duration, m.release_date, m.amount, m.poster_path, m.plot, m.actors, m.directors
-                ),
-                global_avg AS (
-                    SELECT ISNULL(AVG(rating), 0) AS C FROM movieratings
-                ),
-                user_count AS (
-                    SELECT COUNT(*) AS total_users FROM users
-                )
-                SELECT TOP (@Limit)
-                    ms.*,
-                    CASE 
-                        WHEN ms.rating_count = 0 OR uc.total_users = 0 THEN 0
-                        ELSE ((CAST(ms.rating_count AS FLOAT) / (ms.rating_count + uc.total_users * 0.55)) * ms.avg_rating
-                             + ((uc.total_users * 0.55) / (ms.rating_count + uc.total_users * 0.55)) * ga.C)
-                    END AS weighted_rating
-                FROM movie_stats ms
-                CROSS JOIN global_avg ga
-                CROSS JOIN user_count uc
-                ORDER BY weighted_rating DESC;
-            ";
-
-            var movies = (await conn.QueryAsync<Movie>(sql, new { Limit = n })).ToList();
-
-            foreach (var movie in movies)
-            {
-                (decimal weightedRating, List<MovieRating> ratings) = await GetRatingsForMovieAsync(movie.Id);
-                movie.Rating = weightedRating;
-                movie.Ratings = ratings;
-            }
-
-            return movies;
+            return moviesWithRatings
+                .Where(m => m.Ratings != null && m.Ratings.Any())
+                .OrderByDescending(m => m.Ratings.Average(r => r.Rating))
+                .ThenByDescending(m => m.Ratings.Count)
+                .Take(n)
+                .ToList();
         }
 
-    }
+        public async Task<MovieRating> UpsertRatingAsync(MovieRating rating)
+        {
+            var existing = await _context.MovieRatings
+                .FirstOrDefaultAsync(mr => mr.MovieId == rating.MovieId && mr.UserId == rating.UserId);
 
+            if (existing != null)
+            {
+                existing.Rating = rating.Rating;
+                existing.Comment = rating.Comment;
+                existing.UpdatedAt = DateTime.UtcNow;
+                _context.MovieRatings.Update(existing);
+                return existing;
+            }
+            else
+            {
+                rating.CreatedAt = DateTime.UtcNow;
+                await _context.MovieRatings.AddAsync(rating);
+                return rating;
+            }
+        }
+    }
 }

@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using MoviesAPI.Models;
-using MoviesAPI.Models.System;
+﻿using Microsoft.AspNetCore.Mvc;
+using MoviesAPI.Domain.Entities.Screenings;
+using MoviesAPI.Domain.Entities.Halls;
 using MoviesAPI.Repositories.Interface;
 using MoviesAPI.Application.DTOs.Common;
 using MoviesAPI.Application.DTOs.Requests.Screenings;
+using MoviesAPI.Application.DTOs.Responses.Screenings;
+using MoviesAPI.Data;
 using AutoMapper;
 using FluentValidation;
 
@@ -18,17 +19,20 @@ namespace MoviesAPI.Controllers
         private readonly IMapper _mapper;
         private readonly IValidator<CreateScreeningRequest> _createValidator;
         private readonly IValidator<UpdateScreeningRequest> _updateValidator;
+        private readonly IUnitOfWork _unitOfWork;
 
         public ScreeningsController(
             IScreeningRepository screeningRepository,
             IMapper mapper,
             IValidator<CreateScreeningRequest> createValidator,
-            IValidator<UpdateScreeningRequest> updateValidator)
+            IValidator<UpdateScreeningRequest> updateValidator,
+            IUnitOfWork unitOfWork)
         {
             _screeningRepository = screeningRepository;
             _mapper = mapper;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _unitOfWork = unitOfWork;
         }
 
 
@@ -38,28 +42,30 @@ namespace MoviesAPI.Controllers
         public async Task<ActionResult<BaseResponse<List<ScreeningResponse>>>> Get()
         {
             var screenings = await _screeningRepository.GetScreeningsAsync();
-            return Ok(BaseResponse<List<ScreeningResponse>>.Success(screenings.ToList()));
+            var response = _mapper.Map<List<ScreeningResponse>>(screenings);
+            return Ok(BaseResponse<List<ScreeningResponse>>.Success(response));
         }
 
         // GET api/screenings/5
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(BaseResponse<ScreeningResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<ScreeningResponse>>> Get(long id)
+        public async Task<ActionResult<BaseResponse<ScreeningResponse>>> Get(Guid id)
         {
             var screening = await _screeningRepository.GetScreeningAsync(id);
 
             if (screening == null)
                 return NotFound(BaseResponse<object>.Failure("Screening not found"));
 
-            return Ok(BaseResponse<ScreeningResponse>.Success(screening));
+            var response = _mapper.Map<ScreeningResponse>(screening);
+            return Ok(BaseResponse<ScreeningResponse>.Success(response));
         }
 
         // POST api/screenings
         [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<long>), 201)]
+        [ProducesResponseType(typeof(BaseResponse<Guid>), 201)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        public async Task<ActionResult<BaseResponse<long>>> Post([FromBody] CreateScreeningRequest request)
+        public async Task<ActionResult<BaseResponse<Guid>>> Post([FromBody] CreateScreeningRequest request)
         {
             var validationResult = await _createValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -68,25 +74,21 @@ namespace MoviesAPI.Controllers
                 return BadRequest(BaseResponse<object>.Failure(errors));
             }
 
-            var screening = new CreateScreening
-            {
-                Movie_Id = request.MovieId,
-                Hall_Id = request.HallId,
-                Screening_Date_Time = request.ScreeningDateTime
-            };
+            var screening = _mapper.Map<Screening>(request);
+            var created = await _screeningRepository.CreateScreeningAsync(screening);
+            await _unitOfWork.SaveChangesAsync();
 
-            var id = await _screeningRepository.CreateScreeningAsync(screening);
-            return CreatedAtAction(nameof(Get), new { id }, BaseResponse<long>.Success(id, "Screening created successfully"));
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, BaseResponse<Guid>.Success(created.Id, "Screening created successfully"));
         }
 
         // PUT api/screenings/5
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<bool>>> Put(int id, [FromBody] UpdateScreeningRequest request)
+        public async Task<ActionResult<BaseResponse<object>>> Put(Guid id, [FromBody] UpdateScreeningRequest request)
         {
-            var existing = await _screeningRepository.GetScreeningForUpdateAsync(id);
+            var existing = await _screeningRepository.GetScreeningAsync(id);
             if (existing == null)
                 return NotFound(BaseResponse<object>.Failure("Screening not found"));
 
@@ -100,43 +102,38 @@ namespace MoviesAPI.Controllers
             if (request.AvailableTickets > request.TotalTickets)
                 return BadRequest(BaseResponse<object>.Failure("Available tickets cannot be greater than total tickets"));
 
-            var screening = new UpdateScreening
-            {
-                Movie_Id = request.MovieId,
-                Screening_Date_Time = request.ScreeningDateTime,
-                Total_Tickets = request.TotalTickets,
-                Available_Tickets = request.AvailableTickets
-            };
+            _mapper.Map(request, existing);
+            await _screeningRepository.UpdateScreeningAsync(existing);
+            await _unitOfWork.SaveChangesAsync();
 
-            var result = await _screeningRepository.UpdateScreeningAsync(id, screening);
-            return Ok(BaseResponse<int>.Success(result, "Screening updated successfully"));
+            return Ok(BaseResponse<object>.Success(null, "Screening updated successfully"));
         }
 
         // DELETE api/screenings/5
         [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var existing = await _screeningRepository.GetScreeningAsync(id);
             if (existing == null)
                 return NotFound(BaseResponse<object>.Failure("Screening not found"));
 
-            var result = await _screeningRepository.DeleteScreeningAsync(id);
-            return Ok(BaseResponse<int>.Success(result, "Screening deleted successfully"));
+            await _screeningRepository.DeleteScreeningAsync(existing);
+            await _unitOfWork.SaveChangesAsync();
+
+            return Ok(BaseResponse<object>.Success(null, "Screening deleted successfully"));
         }
 
         // GET: api/screenings/1/reservedseats
         [HttpGet("{id}/reservedseats")]
-        [ProducesResponseType(typeof(BaseResponse<List<SeatForScreeningDto>>), 200)]
-        public async Task<IActionResult> GetReservedSeatsForScreening(int id)
+        [ProducesResponseType(typeof(BaseResponse<List<SeatInfo>>), 200)]
+        public async Task<IActionResult> GetReservedSeatsForScreening(Guid id)
         {
             var reservedSeats = await _screeningRepository.GetReservedSeatsAsync(id);
+            var response = _mapper.Map<List<SeatInfo>>(reservedSeats);
 
-            if (reservedSeats == null || !reservedSeats.Any())
-                reservedSeats = new List<SeatForScreeningDto>();
-
-            return Ok(BaseResponse<List<SeatForScreeningDto>>.Success(reservedSeats));
+            return Ok(BaseResponse<List<SeatInfo>>.Success(response));
         }
 
         // POST: api/screenings/5/book
@@ -144,7 +141,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<IActionResult> BookSeats(int id, [FromBody] BookSeatsRequest request)
+        public async Task<IActionResult> BookSeats(Guid id, [FromBody] BookSeatsRequest request)
         {
             if (request.SelectedSeatsId == null || !request.SelectedSeatsId.Any())
                 return BadRequest(BaseResponse<object>.Failure("No seats selected"));
@@ -156,7 +153,14 @@ namespace MoviesAPI.Controllers
 
             try
             {
-                await _screeningRepository.BookSeatsAsync(id, request.username, request.SelectedSeatsId);
+                // Parse username as Guid (assuming it's a user ID)
+                if (!Guid.TryParse(request.username, out Guid userId))
+                    return BadRequest(BaseResponse<object>.Failure("Invalid user ID"));
+
+                var seatIds = request.SelectedSeatsId.Select(s => Guid.Parse(s.ToString())).ToList();
+                await _screeningRepository.BookSeatsAsync(id, userId, seatIds);
+                await _unitOfWork.SaveChangesAsync();
+
                 return Ok(BaseResponse<object>.Success(new { Message = "Seats successfully booked!" }, "Seats successfully booked!"));
             }
             catch (Exception ex)

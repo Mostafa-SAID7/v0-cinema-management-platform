@@ -55,16 +55,16 @@ namespace MoviesAPI.Service.Implementation
                 contextBuilder.AppendLine($"🎬 Screenings for {date}:");
 
                 foreach (var s in screenings.Where(s =>
-                    s.Screening_Date_Time.Date == date.ToDateTime(TimeOnly.MinValue).Date))
+                    s.ScreeningDateTime.Date == date.ToDateTime(TimeOnly.MinValue).Date))
                 {
-                    var movie = await _movieRepository.GetMovieAsync(s.Movie_Id);
+                    var movie = await _movieRepository.GetMovieAsync(s.MovieId);
                     if (movie == null) continue;
 
-                    var hallSeats = await _hallRepository.GetSeatsByHallIdAsync(s.Hall_Id);
+                    var hallSeats = await _hallRepository.GetSeatsByHallIdAsync(s.HallId);
 
-                    int purchasedTickets = await _ticketRepository.GetPurchasedTicketsAsync(
-                        s.Movie_Id, s.Screening_Date_Time
-                    );
+                    // Count tickets for this screening
+                    var tickets = await _ticketRepository.GetTicketsAsync();
+                    int purchasedTickets = tickets.Count(t => t.MovieId == s.MovieId && t.WatchDateTime.Date == s.ScreeningDateTime.Date);
 
                     int availableTickets = hallSeats.Count - purchasedTickets;
 
@@ -73,7 +73,7 @@ namespace MoviesAPI.Service.Implementation
                         : "Sold out";
 
                     contextBuilder.AppendLine(
-                        $"- {movie.Name} at {s.Screening_Date_Time:HH:mm}, {ticketInfo}"
+                        $"- {movie.Name} at {s.ScreeningDateTime:HH:mm}, {ticketInfo}"
                     );
                 }
 

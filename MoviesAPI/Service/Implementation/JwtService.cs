@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MoviesAPI.Models.System;
+using MoviesAPI.Domain.Entities.Users;
 using MoviesAPI.Service.Interface;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,27 +13,33 @@ namespace MoviesAPI.Service.Implementation
     public class JwtService : IJwtService
     {
         private readonly JwtSettings _jwtSettings;
+        private readonly UserManager<User> _userManager;
 
-        public JwtService(IOptions<JwtSettings> jwtSettings)
+        public JwtService(IOptions<JwtSettings> jwtSettings, UserManager<User> userManager)
         {
             _jwtSettings = jwtSettings.Value;
+            _userManager = userManager;
         }
 
-        public string GenerateToken(User user)
+        public async Task<string> GenerateToken(User user)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var roles = await _userManager.GetRolesAsync(user);
+            var roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
+
+            var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Username),
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Name),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role),
-                new Claim("phone", user.Phone)
+                new Claim("phone", user.PhoneNumber ?? user.Phone ?? "")
             };
+
+            claims.AddRange(roleClaims);
 
             var token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,

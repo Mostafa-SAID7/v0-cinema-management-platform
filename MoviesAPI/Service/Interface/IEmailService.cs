@@ -1,9 +1,9 @@
-using MoviesAPI.Models.System;
+using MoviesAPI.Application.DTOs.Requests.Email;
 
 namespace MoviesAPI.Service.Interface
 {
     public interface IEmailService
     {
-        Task SendEmailAsync(EmailMessage message);
+        Task SendEmailAsync(EmailMessageRequest message);
     }
 }

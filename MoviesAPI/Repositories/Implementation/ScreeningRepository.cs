@@ -1,285 +1,142 @@
-using Dapper;
-using Microsoft.Extensions.Options;
-using MoviesAPI.Models;
-using MoviesAPI.Models.System;
+using Microsoft.EntityFrameworkCore;
+using MoviesAPI.Data;
+using MoviesAPI.Domain.Entities.Screenings;
+using MoviesAPI.Domain.Entities.Halls;
+using MoviesAPI.Domain.Entities.Tickets;
 using MoviesAPI.Repositories.Interface;
-using Microsoft.Data.SqlClient;
-using System.Net.Sockets;
 
 namespace MoviesAPI.Repositories.Implementation
 {
     public class ScreeningRepository : IScreeningRepository
     {
-        private readonly DBSettings _dbSettings;
+        private readonly ApplicationDbContext _context;
 
-        public ScreeningRepository(IOptions<DBSettings> dbSettings)
+        public ScreeningRepository(ApplicationDbContext context)
         {
-            _dbSettings = dbSettings.Value;
+            _context = context;
         }
 
-        public async Task<IEnumerable<ScreeningResponse>> GetScreeningsAsync()
+        public async Task<IEnumerable<Screening>> GetScreeningsAsync()
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = @"SELECT 
-                        s.id,
-                        s.movie_id, 
-                        m.name AS movie_name,
-                        s.screening_date_time,
-                        s.total_tickets, 
-                        s.available_tickets,
-                        s.hall_id
-                        FROM screening s
-                        INNER JOIN movie m ON s.movie_id = m.id;";
-
-            var result = await conn.QueryAsync<ScreeningResponse>(sql);
-          
-            return result;
+            return await _context.Screenings
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .AsNoTracking()
+                .OrderBy(s => s.ScreeningDateTime)
+                .ToListAsync();
         }
 
-        public async Task<ScreeningResponse> GetScreeningAsync(long id)
+        public async Task<Screening?> GetScreeningAsync(Guid id)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = @"
-                SELECT 
-                    s.id,
-                    s.movie_id,
-                    s.screening_date_time,
-                    s.total_tickets,
-                    s.available_tickets,
-                    s.hall_id,
-                    m.id AS MovieId,
-                    m.name AS Name,
-                    m.amount AS Amount
-                FROM screening s
-                INNER JOIN movie m ON s.movie_id = m.id
-                WHERE s.id = @id;
-            ";
-            var screening = await conn.QueryAsync<ScreeningResponse, MovieSummary, ScreeningResponse>(
-                sql,
-                (s, m) =>
-                {
-                    s.Movie = m;
-                    return s;
-                },
-                new { id },
-                splitOn: "MovieId"
-            );
-
-            return screening.FirstOrDefault();
+            return await _context.Screenings
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .ThenInclude(h => h.HallSeats)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
 
-        public async Task<Screening> GetScreeningForUpdateAsync(long id)
+        public async Task<Screening> CreateScreeningAsync(Screening screening)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = "SELECT id, movie_id, screening_date_time, total_tickets, available_tickets FROM screening WHERE id = @id";
-
-            var updateScreening = await conn.QueryFirstOrDefaultAsync<Screening>(sql, new { id });
-            return updateScreening;
-
+            screening.CreatedAt = DateTime.UtcNow;
+            await _context.Screenings.AddAsync(screening);
+            return screening;
         }
 
-        public async Task<int> CreateScreeningAsync(CreateScreening screening)
+        public Task UpdateScreeningAsync(Screening screening)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
+            screening.UpdatedAt = DateTime.UtcNow;
+            _context.Screenings.Update(screening);
+            return Task.CompletedTask;
+        }
 
-            var numRowAndSeatSql = "SELECT rows,seats_per_row FROM hall WHERE id = @HallId;";
-            var numRowAndSeat = await conn.QueryFirstOrDefaultAsync<(int rows, int seats_per_row)>(numRowAndSeatSql, new { HallId = screening.Hall_Id });
+        public Task DeleteScreeningAsync(Screening screening)
+        {
+            screening.SoftDelete();
+            _context.Screenings.Update(screening);
+            return Task.CompletedTask;
+        }
 
-            int totalSeats = numRowAndSeat.rows * numRowAndSeat.seats_per_row;
+        public async Task<List<HallSeat>> GetReservedSeatsAsync(Guid screeningId)
+        {
+            var screening = await _context.Screenings
+                .Include(s => s.Movie)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == screeningId);
 
-            var ticketPrice = await conn.ExecuteScalarAsync<decimal>(
-                "SELECT amount FROM movie WHERE id = @Id", new { Id = screening.Movie_Id });
+            if (screening == null)
+                return new List<HallSeat>();
 
-            string sql = @"
-                INSERT INTO screening(movie_id, screening_date_time, total_tickets, available_tickets, hall_id, ticket_price)
-                VALUES (@Movie_Id, @Screening_Date_Time, @TotalTickets, @AvailableTickets, @Hall_Id, @Ticket_Price);
-                SELECT CAST(SCOPE_IDENTITY() AS INT);
-             ";
+            var reservedSeatIds = await _context.Tickets
+                .Where(t => t.MovieId == screening.MovieId && 
+                           t.WatchDateTime == screening.ScreeningDateTime)
+                .Select(t => t.HallSeatId)
+                .ToListAsync();
 
-            var id = await conn.ExecuteScalarAsync<int>(sql, new
+            return await _context.HallSeats
+                .Where(hs => reservedSeatIds.Contains(hs.Id))
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task BookSeatsAsync(Guid screeningId, Guid userId, List<Guid> hallSeatIds)
+        {
+            var screening = await _context.Screenings
+                .Include(s => s.Movie)
+                .FirstOrDefaultAsync(s => s.Id == screeningId);
+
+            if (screening == null)
+                throw new InvalidOperationException("Screening not found");
+
+            if (screening.AvailableTickets < hallSeatIds.Count)
+                throw new InvalidOperationException("Not enough available tickets");
+
+            var tickets = hallSeatIds.Select(seatId => new Ticket
             {
-                screening.Movie_Id,
-                screening.Screening_Date_Time,
-                TotalTickets = totalSeats,
-                AvailableTickets = totalSeats,
-                screening.Hall_Id,
-                Ticket_Price = ticketPrice
-            });
+                Id = Guid.NewGuid(),
+                MovieId = screening.MovieId,
+                UserId = userId,
+                WatchDateTime = screening.ScreeningDateTime,
+                Price = screening.Movie?.Amount ?? 0,
+                HallSeatId = seatId,
+                CreatedAt = DateTime.UtcNow
+            }).ToList();
 
-            return id;
+            await _context.Tickets.AddRangeAsync(tickets);
 
-
+            screening.AvailableTickets -= hallSeatIds.Count;
+            screening.UpdatedAt = DateTime.UtcNow;
+            _context.Screenings.Update(screening);
         }
 
-        public async Task<int> UpdateScreeningAsync(long id, UpdateScreening screening)
+        public async Task<List<Screening>> GetScreeningsByHallAndDateAsync(Guid hallId, DateOnly date)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
+            var startDate = date.ToDateTime(TimeOnly.MinValue);
+            var endDate = date.ToDateTime(TimeOnly.MaxValue);
 
-            string sql = @"UPDATE screening
-                   SET movie_id = @Movie_Id,
-                       screening_date_time = @Screening_Date_Time,
-                       total_tickets = @Total_Tickets,
-                       available_tickets = @Available_Tickets
-                       WHERE id = @Id";
-
-            return await conn.ExecuteAsync(sql, new
-            {
-                Id = id,
-                screening.Movie_Id,
-                screening.Screening_Date_Time,
-                screening.Total_Tickets,
-                screening.Available_Tickets
-            });
+            return await _context.Screenings
+                .Where(s => s.HallId == hallId && 
+                           s.ScreeningDateTime >= startDate && 
+                           s.ScreeningDateTime <= endDate)
+                .Include(s => s.Movie)
+                .AsNoTracking()
+                .OrderBy(s => s.ScreeningDateTime)
+                .ToListAsync();
         }
-
-        public async Task<int> DeleteScreeningAsync(long id)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = "delete from screening where id = @id";
-
-            return await conn.ExecuteAsync(sql, new { id });
-
-        }
-
-        public async Task<List<SeatForScreeningDto>> GetReservedSeatsAsync(long screeningId)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"
-                SELECT sfs.id AS Id, sfs.screening_id AS ScreeningId, 
-                       hs.id AS HallSeatId, hs.row_number, hs.seat_number, sfs.user_id AS UserId
-                FROM seat_for_screening sfs
-                INNER JOIN hall_seat hs ON hs.id = sfs.hall_seat_id
-                WHERE sfs.screening_id = @ScreeningId
-                ORDER BY hs.row_number, hs.seat_number;
-              ";
-
-            var seats = await conn.QueryAsync<SeatForScreeningDto>(sql, new { ScreeningId = screeningId });
-            return seats.ToList();
-        }
-
-
-        public async Task BookSeatsAsync(long screeningId, string username, List<int> hallSeatIds)
-        {
-
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            await conn.OpenAsync();
-
-            using var transaction = await conn.BeginTransactionAsync();
-
-            try
-            {
-                string userIdSql = @"SELECT id FROM users WHERE username = @Username";
-                var userId = await conn.ExecuteScalarAsync<long?>(userIdSql, new { Username = username }, transaction);
-
-                if (userId == null)
-                    throw new Exception($"User '{username}' not found.");
-
-                long actualUserId = userId.Value;
-
-                string conflictSql = @"
-                    SELECT hall_seat_id 
-                    FROM seat_for_screening 
-                    WHERE screening_id = @ScreeningId 
-                      AND hall_seat_id = ANY(@SeatIds)";
-
-                var takenSeats = (await conn.QueryAsync<int>(
-                    conflictSql,
-                    new { ScreeningId = screeningId, SeatIds = hallSeatIds },
-                    transaction)).ToList();
-
-                if (takenSeats.Any())
-                    throw new Exception($"Seats already booked: {string.Join(", ", takenSeats)}");
-
-                ScreeningResponse screening = await GetScreeningAsync(screeningId);
-                decimal ticketAmount = screening.Movie.Amount;
-
-                foreach (var seatId in hallSeatIds)
-                {
-                    string ticketSql = @"
-                    INSERT INTO ticket(movie_id, user_id, watch_movie, price, hall_seat_id)
-                    VALUES(@MovieId, @UserId, @WatchMovie, @Price, @HallSeatId);
-                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-                    int ticketId = await conn.ExecuteScalarAsync<int>(
-                        ticketSql,
-                        new
-                        {
-                            MovieId = screening.Movie_Id,
-                            UserId = actualUserId,
-                            WatchMovie = screening.Screening_Date_Time,
-                            Price = ticketAmount,
-                            HallSeatId = seatId
-                        },
-                        transaction);
-
-                    string insertSeatSql = @"
-                INSERT INTO seat_for_screening(screening_id, hall_seat_id, user_id, ticket_id)
-                VALUES(@ScreeningId, @HallSeatId, @UserId, @TicketId);";
-
-                    await conn.ExecuteAsync(insertSeatSql,
-                        new { ScreeningId = screeningId, HallSeatId = seatId, UserId = actualUserId, TicketId = ticketId },
-                        transaction);
-                }
-
-                string updateSql = @"
-            UPDATE screening 
-            SET available_tickets = available_tickets - @Count 
-            WHERE id = @ScreeningId";
-
-                await conn.ExecuteAsync(updateSql,
-                    new { Count = hallSeatIds.Count, ScreeningId = screeningId },
-                    transaction);
-
-                await transaction.CommitAsync();
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
-
-        public async Task<List<Screening>> GetScreeningsByHallAndDateAsync(int hall_id,DateOnly date)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"
-                SELECT *
-                FROM screening s
-                WHERE s.hall_id = @hall_id
-                  AND DATE(s.screening_date_time) = @screening_date;
-            ";
-
-            var screenings = await conn.QueryAsync<Screening>(
-                sql,
-                new { hall_id, screening_date = date.ToDateTime(TimeOnly.MinValue) }
-            );
-
-            return screenings.ToList();
-        }
-
 
         public async Task<List<Screening>> GetScreeningsByDateAsync(DateOnly date)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
+            var startDate = date.ToDateTime(TimeOnly.MinValue);
+            var endDate = date.ToDateTime(TimeOnly.MaxValue);
 
-            string sql = @"
-                SELECT *
-                FROM screening s
-                WHERE DATE(s.screening_date_time) = @screening_date;
-            ";
-
-            var screenings = await conn.QueryAsync<Screening>(
-                sql,
-                new { screening_date = date.ToDateTime(TimeOnly.MinValue) }
-            );
-
-            return screenings.ToList();
+            return await _context.Screenings
+                .Where(s => s.ScreeningDateTime >= startDate && 
+                           s.ScreeningDateTime <= endDate)
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .AsNoTracking()
+                .OrderBy(s => s.ScreeningDateTime)
+                .ToListAsync();
         }
-
-
-
     }
 }

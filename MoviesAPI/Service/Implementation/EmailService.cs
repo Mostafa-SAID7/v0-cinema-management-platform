@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Configuration;
-using MoviesAPI.Models.System;
+using MoviesAPI.Application.DTOs.Requests.Email;
 using MoviesAPI.Service.Interface;
 using sib_api_v3_sdk.Api;
 using sib_api_v3_sdk.Client;
@@ -22,7 +22,7 @@ namespace MoviesAPI.Service.Implementation
             _api = new TransactionalEmailsApi(config);
         }
 
-        public async System.Threading.Tasks.Task SendEmailAsync(EmailMessage message)
+        public async System.Threading.Tasks.Task SendEmailAsync(EmailMessageRequest message)
         {
             var sendSmtpEmail = new SendSmtpEmail(
                 sender: new SendSmtpEmailSender(name: "Movie App", email: "movietesting27@gmail.com"),

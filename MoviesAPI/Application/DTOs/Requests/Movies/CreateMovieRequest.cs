@@ -17,22 +17,6 @@ namespace MoviesAPI.Application.DTOs.Requests.Movies
     }
 
     /// <summary>
-    /// Request DTO for updating an existing movie
-    /// </summary>
-    public class UpdateMovieRequest
-    {
-        public string Name { get; set; }
-        public int Duration { get; set; }
-        public DateTime ReleaseDate { get; set; }
-        public decimal Amount { get; set; }
-        public string PosterPath { get; set; }
-        public string Plot { get; set; }
-        public string Actors { get; set; }
-        public string Directors { get; set; }
-        public List<string> Genres { get; set; }
-    }
-
-    /// <summary>
     /// Request DTO for rating a movie
     /// </summary>
     public class RateMovieRequest

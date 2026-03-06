@@ -1,172 +1,126 @@
-﻿using Dapper;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using MoviesAPI.Models.System;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using MoviesAPI.Data;
+using MoviesAPI.Domain.Entities.Users;
 using MoviesAPI.Repositories.Interface;
-using Microsoft.Data.SqlClient;
 
 namespace MoviesAPI.Repositories.Implementation
 {
+    /// <summary>
+    /// Repository implementation for User entity using ASP.NET Core Identity
+    /// </summary>
     public class UserRepository : IUserRepository
     {
-        private readonly DBSettings _dbSettings;
+        private readonly ApplicationDbContext _context;
+        private readonly UserManager<User> _userManager;
 
-        public UserRepository(IOptions<DBSettings> dbSettings)
+        public UserRepository(ApplicationDbContext context, UserManager<User> userManager)
         {
-            _dbSettings = dbSettings.Value;
+            _context = context;
+            _userManager = userManager;
         }
 
         public async Task<IEnumerable<User>> GetUsersAsync()
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = "SELECT id, name, phone, username, password,email,active,role FROM users";
-
-            var result = await conn.QueryAsync<User>(sql);
-            return result;
+            return await _userManager.Users
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public async Task<User> GetUserAsync(long id)
+        public async Task<User?> GetUserByIdAsync(Guid id)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = "SELECT id, name, phone, username, password,email,active,role FROM users WHERE id = @id";
+            return await _userManager.FindByIdAsync(id.ToString());
+        }
 
-            var user = await conn.QueryFirstOrDefaultAsync<User>(sql, new { id });
+        public async Task<User?> GetUserByUsernameAsync(string username)
+        {
+            return await _userManager.FindByNameAsync(username);
+        }
+
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            return await _userManager.FindByEmailAsync(email);
+        }
+
+        public async Task<User> CreateUserAsync(User user)
+        {
+            // Note: Password should be hashed using UserManager.CreateAsync(user, password)
+            // This method is for internal use only
+            await _context.Users.AddAsync(user);
             return user;
         }
 
-        public async Task<User> GetUserByUsername(string username)
+        public Task UpdateUserAsync(User user)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = "SELECT id, name, phone, username, password,email,active,role FROM users WHERE username = @username";
-
-            var user = await conn.QueryFirstOrDefaultAsync<User>(sql, new { username });
-            return user;
+            _context.Users.Update(user);
+            return Task.CompletedTask;
         }
 
-        public async Task<UserProfile> GetUserForUpdateAsync(long id)
+        public Task DeleteUserAsync(User user)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = "SELECT name, phone, username FROM users WHERE id = @id";
-
-            var updateUser = await conn.QueryFirstOrDefaultAsync<UserProfile>(sql, new { id });
-            return updateUser;
-
-        }
-
-        public async Task<int> CreateUserAsync(RegisterRequest user)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"
-                    INSERT INTO users(name, phone, username, password, email, active,emailconfirmed) 
-                    VALUES(@Name, @Phone, @Username, @Password, @Email, @IsActive, @EmailConfirmed);
-                    SELECT CAST(SCOPE_IDENTITY() AS INT);
-                ";
-            var id = await conn.ExecuteScalarAsync<int>(sql, user);
-            return id;
-
-        }
-
-        public async Task<int> UpdateUserAsync( UserProfile updateUser)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"UPDATE users
-                   SET name = @Name,
-                       phone = @Phone
-                   WHERE username = @Username";
-
-            return await conn.ExecuteAsync(sql, new
-            {
-                updateUser.Name,
-                updateUser.Phone,
-                updateUser.Username
-            });
-        }
-
-        public async Task<int> DeleteUserAsync(long id)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = "delete from users where id = @id";
-
-            return await conn.ExecuteAsync(sql, new { id });
-
-        }
-
-        public async Task<User> GetUserByUsernameAndPassword(string username, string password)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"SELECT id, name, phone, username, password, email, emailconfirmed AS ""EmailConfirmed"", active AS ""IsActive"", role
-                         FROM users
-                         WHERE username = @username AND password = @password";
-
-            var user = await conn.QueryFirstOrDefaultAsync<User>(sql, new { username, password });
-
-            if (user == null)
-                return null;
-
-            string updateSql = @"UPDATE users SET active = 1 WHERE username = @username";
-            await conn.ExecuteAsync(updateSql, new { username });
-
-
-            return user;
-        }
-
-        public async Task<bool> LogoutUser(string username)
-        {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"UPDATE users SET active = 0 WHERE username = @username";
-            int rowsAffected = await conn.ExecuteAsync(sql, new { username });
-
-            return rowsAffected > 0;
+            // Soft delete
+            user.SoftDelete();
+            _context.Users.Update(user);
+            return Task.CompletedTask;
         }
 
         public async Task<bool> IsEmailTakenAsync(string email)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-            string sql = "SELECT COUNT(1) FROM users WHERE email = @Email;";
-            var count = await conn.ExecuteScalarAsync<int>(sql, new { Email = email });
-            return count > 0;
+            var user = await _userManager.FindByEmailAsync(email);
+            return user != null;
         }
 
-        public async Task<User> GetUserByEmailAsync(string email)
+        public async Task<bool> IsUsernameTakenAsync(string username)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
+            var user = await _userManager.FindByNameAsync(username);
+            return user != null;
+        }
 
-            string sql = @"SELECT id, name, phone, username, password, email, active AS ""IsActive"", role
-                   FROM users
-                   WHERE email = @Email";
+        public async Task<User?> GetUserByUsernameAndPasswordAsync(string username, string password)
+        {
+            var user = await _userManager.FindByNameAsync(username);
+            if (user == null)
+                return null;
 
-            var user = await conn.QueryFirstOrDefaultAsync<User>(sql, new { Email = email });
+            var isPasswordValid = await _userManager.CheckPasswordAsync(user, password);
+            if (!isPasswordValid)
+                return null;
+
+            user.IsActive = true;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
             return user;
         }
 
-        public async Task<bool> UpdateUserPasswordAsync(int userId, string newPassword)
+        public async Task UpdateUserPasswordAsync(Guid userId, string newPassword)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"UPDATE users
-                   SET password = @Password
-                   WHERE id = @UserId";
-
-            int rowsAffected = await conn.ExecuteAsync(sql, new { Password = newPassword, UserId = userId });
-            return rowsAffected > 0;
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user != null)
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                await _userManager.ResetPasswordAsync(user, token, newPassword);
+                user.UpdatedAt = DateTime.UtcNow;
+                await _userManager.UpdateAsync(user);
+            }
         }
 
-        public async Task<int> UpdateUserRoleAsync(int userId, string role)
+        public async Task UpdateUserRoleAsync(Guid userId, string role)
         {
-            using var conn = new SqlConnection(_dbSettings.SqlServerDB);
-
-            string sql = @"UPDATE users
-                   SET role = @Role
-                   WHERE id = @UserId";
-
-            return await conn.ExecuteAsync(sql, new { Role = role, UserId = userId });
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user != null)
+            {
+                // Remove existing roles
+                var currentRoles = await _userManager.GetRolesAsync(user);
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                
+                // Add new role
+                await _userManager.AddToRoleAsync(user, role);
+                
+                user.IsAdmin = role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+                user.UpdatedAt = DateTime.UtcNow;
+                await _userManager.UpdateAsync(user);
+            }
         }
-
-
     }
 }

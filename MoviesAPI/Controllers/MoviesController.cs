@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MoviesAPI.Models;
+using MoviesAPI.Domain.Entities.Movies;
 using MoviesAPI.Repositories.Interface;
 using MoviesAPI.Application.DTOs.Common;
 using MoviesAPI.Application.DTOs.Requests.Movies;
 using MoviesAPI.Application.DTOs.Responses.Movies;
+using MoviesAPI.Data;
 using AutoMapper;
 using FluentValidation;
 
@@ -17,17 +18,20 @@ namespace MoviesAPI.Controllers
         private readonly IMapper _mapper;
         private readonly IValidator<CreateMovieRequest> _createValidator;
         private readonly IValidator<UpdateMovieRequest> _updateValidator;
+        private readonly IUnitOfWork _unitOfWork;
 
         public MoviesController(
             IMovieRepository movieRepository,
             IMapper mapper,
             IValidator<CreateMovieRequest> createValidator,
-            IValidator<UpdateMovieRequest> updateValidator)
+            IValidator<UpdateMovieRequest> updateValidator,
+            IUnitOfWork unitOfWork)
         {
             _movieRepository = movieRepository;
             _mapper = mapper;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _unitOfWork = unitOfWork;
         }
 
 
@@ -45,7 +49,7 @@ namespace MoviesAPI.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(BaseResponse<MovieResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<MovieResponse>>> Get(long id)
+        public async Task<ActionResult<BaseResponse<MovieResponse>>> Get(Guid id)
         {
             var movie = await _movieRepository.GetMovieAsync(id);
 
@@ -58,9 +62,9 @@ namespace MoviesAPI.Controllers
 
         // POST api/movies
         [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<long>), 201)]
+        [ProducesResponseType(typeof(BaseResponse<Guid>), 201)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        public async Task<ActionResult<BaseResponse<long>>> Post([FromBody] CreateMovieRequest request)
+        public async Task<ActionResult<BaseResponse<Guid>>> Post([FromBody] CreateMovieRequest request)
         {
             var validationResult = await _createValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -69,20 +73,21 @@ namespace MoviesAPI.Controllers
                 return BadRequest(BaseResponse<object>.Failure(errors));
             }
 
-            var movie = _mapper.Map<CreateAndUpdateMovie>(request);
-            var id = await _movieRepository.CreateMovieAsync(movie);
+            var movie = _mapper.Map<Movie>(request);
+            var created = await _movieRepository.CreateMovieAsync(movie);
+            await _unitOfWork.SaveChangesAsync();
             
-            return CreatedAtAction(nameof(Get), new { id }, BaseResponse<long>.Success(id, "Movie created successfully"));
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, BaseResponse<Guid>.Success(created.Id, "Movie created successfully"));
         }
 
         // PUT api/movies/5
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<bool>>> Put(int id, [FromBody] UpdateMovieRequest request)
+        public async Task<ActionResult<BaseResponse<object>>> Put(Guid id, [FromBody] UpdateMovieRequest request)
         {
-            var existing = await _movieRepository.GetMovieForUpdateAsync(id);
+            var existing = await _movieRepository.GetMovieAsync(id);
             if (existing == null)
                 return NotFound(BaseResponse<object>.Failure("Movie not found"));
 
@@ -93,24 +98,27 @@ namespace MoviesAPI.Controllers
                 return BadRequest(BaseResponse<object>.Failure(errors));
             }
 
-            var movie = _mapper.Map<CreateAndUpdateMovie>(request);
-            var result = await _movieRepository.UpdateMovieAsync(id, movie);
+            _mapper.Map(request, existing);
+            await _movieRepository.UpdateMovieAsync(existing);
+            await _unitOfWork.SaveChangesAsync();
             
-            return Ok(BaseResponse<int>.Success(result, "Movie updated successfully"));
+            return Ok(BaseResponse<object>.Success(null, "Movie updated successfully"));
         }
 
         // DELETE api/movies/5
         [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(BaseResponse<int>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var existing = await _movieRepository.GetMovieAsync(id);
             if (existing == null)
                 return NotFound(BaseResponse<object>.Failure("Movie not found"));
 
-            var result = await _movieRepository.DeleteMovieAsync(id);
-            return Ok(BaseResponse<int>.Success(result, "Movie deleted successfully"));
+            await _movieRepository.DeleteMovieAsync(existing);
+            await _unitOfWork.SaveChangesAsync();
+
+            return Ok(BaseResponse<object>.Success(null, "Movie deleted successfully"));
         }
 
         // GET: /api/movies/genre/{genreName}
@@ -132,55 +140,15 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<List<string>>), 200)]
         public async Task<ActionResult<BaseResponse<List<string>>>> GetAllGenres()
         {
-            var genres = await _movieRepository.GettAllGenresAsync();
+            var genres = await _movieRepository.GetAllGenresAsync();
             return Ok(BaseResponse<List<string>>.Success(genres));
-        }
-
-        // GET: /api/movies/futuremovies
-        [HttpGet("futuremovies")]
-        [ProducesResponseType(typeof(BaseResponse<List<FutureMovie>>), 200)]
-        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<List<FutureMovie>>>> GetFutureMovies()
-        {
-            var movies = await _movieRepository.GetFutureMoviesAsync();
-            if (!movies.Any())
-                return NotFound(BaseResponse<object>.Failure("No future movies found"));
-
-            return Ok(BaseResponse<List<FutureMovie>>.Success(movies.ToList()));
-        }
-
-        // POST api/movies/futuremovies
-        [HttpPost("futuremovies")]
-        [ProducesResponseType(typeof(BaseResponse<long>), 201)]
-        [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        public async Task<ActionResult<BaseResponse<long>>> Post([FromBody] CreateFutureMovie movie)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(BaseResponse<object>.Failure(ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()));
-
-            var id = await _movieRepository.CreateFutureMovieAsync(movie);
-            return Ok(BaseResponse<long>.Success(id, "Future movie created successfully"));
-        }
-
-        // DELETE api/movies/futuremovies/5
-        [HttpDelete("futuremovies/{id}")]
-        [ProducesResponseType(typeof(BaseResponse<int>), 200)]
-        [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<IActionResult> DeleteFutureMovie(long id)
-        {
-            var existing = await _movieRepository.GetFutureMovieAsync(id);
-            if (existing == null)
-                return NotFound(BaseResponse<object>.Failure("Future movie not found"));
-
-            var result = await _movieRepository.DeleteFutureMovieAsync(id);
-            return Ok(BaseResponse<int>.Success(result, "Future movie deleted successfully"));
         }
 
         // GET: /api/movies/5/rating/3
         [HttpGet("{idMovie}/rating/{idUser}")]
         [ProducesResponseType(typeof(BaseResponse<int>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<int>>> GetRatingOfUserForMovie(long idMovie, long idUser)
+        public async Task<ActionResult<BaseResponse<int>>> GetRatingOfUserForMovie(Guid idMovie, Guid idUser)
         {
             var rating = await _movieRepository.GetRatingOfUserForMovieAsync(idMovie, idUser);
             if (rating == null)
@@ -208,18 +176,22 @@ namespace MoviesAPI.Controllers
         [HttpPut("{movieId}/rating")]
         [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        public async Task<ActionResult<BaseResponse<object>>> UpdateRating(long movieId, [FromBody] CreateRating rating)
+        public async Task<ActionResult<BaseResponse<object>>> UpdateRating(Guid movieId, [FromBody] CreateRatingRequest request)
         {
-            if (rating.Rating < 1 || rating.Rating > 10)
+            if (request.Rating < 1 || request.Rating > 10)
                 return BadRequest(BaseResponse<object>.Failure("Rating must be between 1 and 10"));
 
-            rating.MovieId = movieId;
+            var rating = new MovieRating
+            {
+                MovieId = movieId,
+                UserId = Guid.Parse(request.UserId.ToString()),
+                Rating = request.Rating
+            };
 
-            var success = await _movieRepository.UpsertRating(rating);
-            if (!success)
-                return StatusCode(500, BaseResponse<object>.Failure("Failed to save rating"));
+            var saved = await _movieRepository.UpsertRatingAsync(rating);
+            await _unitOfWork.SaveChangesAsync();
 
-            return Ok(BaseResponse<object>.Success(new { success = true, message = "Rating saved successfully", rating }, "Rating saved successfully"));
+            return Ok(BaseResponse<object>.Success(new { success = true, message = "Rating saved successfully", rating = request.Rating }, "Rating saved successfully"));
         }
     }
 }

@@ -1,13 +1,12 @@
-﻿using MoviesAPI.Models;
+﻿using MoviesAPI.Domain.Entities.Halls;
 
 namespace MoviesAPI.Repositories.Interface
 {
     public interface IHallRepository
     {
-        Task<List<HallDto>> GetAllHallsAsync();
-        Task<HallDto?> GetHallByIdAsync(int hallId);
-        Task<List<HallSeatDto>> GetSeatsByHallIdAsync(int hallId);
+        Task<List<Hall>> GetAllHallsAsync();
+        Task<Hall?> GetHallByIdAsync(Guid hallId);
+        Task<List<HallSeat>> GetSeatsByHallIdAsync(Guid hallId);
+        Task<HallSeat?> GetSeatByIdAsync(Guid seatId);
     }
-
-
 }

@@ -38,9 +38,6 @@ namespace MoviesAPI.Application.Validators.Users
                 .Matches(@"[0-9]").WithMessage("Password must contain at least one number")
                 .Matches(@"[\!\@\#\$\%\^\&\*\(\)\_\+\-\=\[\]\{\}\;\:\'\,\.\<\>\?]")
                 .WithMessage("Password must contain at least one special character");
-
-            RuleFor(x => x.ConfirmPassword)
-                .Equal(x => x.Password).WithMessage("Passwords do not match");
         }
     }
 
@@ -82,46 +79,6 @@ namespace MoviesAPI.Application.Validators.Users
     }
 
     /// <summary>
-    /// Validator for ChangePasswordRequest
-    /// </summary>
-    public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRequest>
-    {
-        public ChangePasswordRequestValidator()
-        {
-            RuleFor(x => x.UserId)
-                .GreaterThan(0).WithMessage("User ID must be greater than 0");
-
-            RuleFor(x => x.CurrentPassword)
-                .NotEmpty().WithMessage("Current password is required");
-
-            RuleFor(x => x.NewPassword)
-                .NotEmpty().WithMessage("New password is required")
-                .MinimumLength(8).WithMessage("Password must be at least 8 characters")
-                .NotEqual(x => x.CurrentPassword).WithMessage("New password must be different from current password");
-
-            RuleFor(x => x.ConfirmNewPassword)
-                .Equal(x => x.NewPassword).WithMessage("Passwords do not match");
-        }
-    }
-
-    /// <summary>
-    /// Validator for UpdateUserRoleRequest
-    /// </summary>
-    public class UpdateUserRoleRequestValidator : AbstractValidator<UpdateUserRoleRequest>
-    {
-        public UpdateUserRoleRequestValidator()
-        {
-            RuleFor(x => x.UserId)
-                .GreaterThan(0).WithMessage("User ID must be greater than 0");
-
-            RuleFor(x => x.Role)
-                .NotEmpty().WithMessage("Role is required")
-                .Must(role => role == "Admin" || role == "User")
-                .WithMessage("Role must be either 'Admin' or 'User'");
-        }
-    }
-
-    /// <summary>
     /// Validator for ForgotPasswordRequest
     /// </summary>
     public class ForgotPasswordRequestValidator : AbstractValidator<ForgotPasswordRequest>
@@ -147,9 +104,6 @@ namespace MoviesAPI.Application.Validators.Users
             RuleFor(x => x.NewPassword)
                 .NotEmpty().WithMessage("New password is required")
                 .MinimumLength(8).WithMessage("Password must be at least 8 characters");
-
-            RuleFor(x => x.ConfirmPassword)
-                .Equal(x => x.NewPassword).WithMessage("Passwords do not match");
         }
     }
 }

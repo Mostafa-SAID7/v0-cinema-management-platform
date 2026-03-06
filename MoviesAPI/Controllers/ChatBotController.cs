@@ -1,8 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MoviesAPI.Models;
+using MoviesAPI.Domain.Entities.Faqs;
 using MoviesAPI.Repositories.Interface;
 using MoviesAPI.Service.Interface;
 using MoviesAPI.Application.DTOs.Common;
+using MoviesAPI.Application.DTOs.Requests.ChatBot;
+using MoviesAPI.Application.DTOs.Responses.Faqs;
+using MoviesAPI.Data;
+using AutoMapper;
 
 namespace MoviesAPI.Controllers
 {
@@ -13,48 +17,61 @@ namespace MoviesAPI.Controllers
         private readonly IChatBotRepository _chatbotRepository;
         private readonly IOpenAIService _openAIService;
         private readonly IChatBotRagService _chatBotRagService;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-
-        public ChatBotController(IChatBotRepository chatbotRepository,IOpenAIService openAIService,IChatBotRagService chatBotRagService)
+        public ChatBotController(
+            IChatBotRepository chatbotRepository,
+            IOpenAIService openAIService,
+            IChatBotRagService chatBotRagService,
+            IUnitOfWork unitOfWork,
+            IMapper mapper)
         {
             _chatbotRepository = chatbotRepository;
             _openAIService = openAIService;
             _chatBotRagService = chatBotRagService;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         // GET: api/chatbot/faqs
         [HttpGet("faqs")]
-        [ProducesResponseType(typeof(BaseResponse<List<Faq>>), 200)]
-        public async Task<ActionResult<BaseResponse<List<Faq>>>> GetAllFaq()
+        [ProducesResponseType(typeof(BaseResponse<List<FaqResponse>>), 200)]
+        public async Task<ActionResult<BaseResponse<List<FaqResponse>>>> GetAllFaq()
         {
             var faqs = await _chatbotRepository.GetAllFaqAsync();
-            return Ok(BaseResponse<List<Faq>>.Success(faqs));
+            var response = _mapper.Map<List<FaqResponse>>(faqs);
+            return Ok(BaseResponse<List<FaqResponse>>.Success(response));
         }
 
         // GET: api/chatbot/faqs/{id}
         [HttpGet("faqs/{id}")]
-        [ProducesResponseType(typeof(BaseResponse<Faq>), 200)]
+        [ProducesResponseType(typeof(BaseResponse<FaqResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<Faq>>> GetFaqById(int id)
+        public async Task<ActionResult<BaseResponse<FaqResponse>>> GetFaqById(Guid id)
         {
             var faq = await _chatbotRepository.GetFaqByIdAsync(id);
             if (faq == null)
                 return NotFound(BaseResponse<object>.Failure("FAQ not found"));
             
-            return Ok(BaseResponse<Faq>.Success(faq));
+            var response = _mapper.Map<FaqResponse>(faq);
+            return Ok(BaseResponse<FaqResponse>.Success(response));
         }
 
         // POST: api/chatbot/faq
         [HttpPost("faq")]
-        [ProducesResponseType(typeof(BaseResponse<Faq>), 201)]
+        [ProducesResponseType(typeof(BaseResponse<FaqResponse>), 201)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-        public async Task<ActionResult<BaseResponse<Faq>>> CreateFaq(Faq faq)
+        public async Task<ActionResult<BaseResponse<FaqResponse>>> CreateFaq(Faq faq)
         {
             if (!ModelState.IsValid)
                 return BadRequest(BaseResponse<object>.Failure(ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()));
 
             await _chatbotRepository.AddFaqAsync(faq);
-            return CreatedAtAction(nameof(GetFaqById), new { id = faq.Id }, BaseResponse<Faq>.Success(faq, "FAQ created successfully"));
+            await _unitOfWork.SaveChangesAsync();
+            
+            var response = _mapper.Map<FaqResponse>(faq);
+            return CreatedAtAction(nameof(GetFaqById), new { id = faq.Id }, BaseResponse<FaqResponse>.Success(response, "FAQ created successfully"));
         }
 
         // PUT: api/chatbot/faq/{id}
@@ -62,7 +79,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<object>>> Update(int id, Faq faq)
+        public async Task<ActionResult<BaseResponse<object>>> Update(Guid id, Faq faq)
         {
             if (id != faq.Id)
                 return BadRequest(BaseResponse<object>.Failure("ID mismatch"));
@@ -72,6 +89,8 @@ namespace MoviesAPI.Controllers
                 return NotFound(BaseResponse<object>.Failure("FAQ not found"));
 
             await _chatbotRepository.UpdateFaqAsync(faq);
+            await _unitOfWork.SaveChangesAsync();
+            
             return Ok(BaseResponse<object>.Success(null, "FAQ updated successfully"));
         }
 
@@ -79,13 +98,15 @@ namespace MoviesAPI.Controllers
         [HttpDelete("faq/{id}")]
         [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 404)]
-        public async Task<ActionResult<BaseResponse<object>>> Delete(int id)
+        public async Task<ActionResult<BaseResponse<object>>> Delete(Guid id)
         {
-            var existing = await _chatbotRepository.GetFaqByIdAsync(id);
-            if (existing == null)
+            var faq = await _chatbotRepository.GetFaqByIdAsync(id);
+            if (faq == null)
                 return NotFound(BaseResponse<object>.Failure("FAQ not found"));
 
-            await _chatbotRepository.DeleteFaqAsync(id);
+            await _chatbotRepository.DeleteFaqAsync(faq);
+            await _unitOfWork.SaveChangesAsync();
+            
             return Ok(BaseResponse<object>.Success(null, "FAQ deleted successfully"));
         }
 
@@ -100,11 +121,6 @@ namespace MoviesAPI.Controllers
 
             var answer = await _chatBotRagService.AskQuestionAsync(request.Question);
             return Ok(BaseResponse<object>.Success(new { answer }, "Question answered successfully"));
-        }
-
-        public class UserQuestionRequest
-        {
-            public string Question { get; set; }
         }
     }
 }

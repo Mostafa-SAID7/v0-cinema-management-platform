@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using MoviesAPI.Models.System;
 using MoviesAPI.Service.Interface;
 using MoviesAPI.Application.DTOs.Common;
+using MoviesAPI.Application.DTOs.Requests.Support;
+using MoviesAPI.Application.DTOs.Requests.Email;
 using System.Text;
 
 namespace MoviesAPI.Controllers
@@ -23,7 +25,7 @@ namespace MoviesAPI.Controllers
         [ProducesResponseType(typeof(BaseResponse<object>), 200)]
         [ProducesResponseType(typeof(BaseResponse<object>), 400)]
         [ProducesResponseType(typeof(BaseResponse<object>), 500)]
-        public async Task<IActionResult> SubmitContactForm([FromBody] SupportMessage supportMessage)
+        public async Task<IActionResult> SubmitContactForm([FromBody] SupportMessageRequest supportMessage)
         {
             if (!ModelState.IsValid)
             {
@@ -37,7 +39,7 @@ namespace MoviesAPI.Controllers
 
             try
             {
-                var emailMessage = new EmailMessage
+                var emailMessage = new EmailMessageRequest
                 {
                     MailTo = "support@shoftv.com",
                     Subject = $"Support Request: {supportMessage.Subject}"

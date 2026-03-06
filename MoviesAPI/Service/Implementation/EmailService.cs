@@ -17,7 +17,7 @@ namespace MoviesAPI.Service.Implementation
         public EmailService(IConfiguration configuration)
         {
             var apiKey = configuration["SendinBlue:ApiKey"];
-            var config = new Configuration();
+            var config = new sib_api_v3_sdk.Client.Configuration();
             config.ApiKey.Add("api-key", apiKey);
             _api = new TransactionalEmailsApi(config);
         }

@@ -1,0 +1,8 @@
+2026-03-06 02:55:18.968 +02:00 [INF] ShofTV API started successfully
+2026-03-06 02:55:19.245 +02:00 [INF] User profile is available. Using 'C:\Users\Memo\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-03-06 02:55:19.498 +02:00 [INF] Now listening on: http://localhost:5272
+2026-03-06 02:55:19.507 +02:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-03-06 02:55:19.510 +02:00 [INF] Hosting environment: Development
+2026-03-06 02:55:19.512 +02:00 [INF] Content root path: C:\Users\Memo\Desktop\Projects\Pulls\Movies\ShofTV-FullStack\Backend\MoviesAPI
+2026-03-06 02:55:30.764 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5272/swagger/index.html - null null
+2026-03-06 02:55:31.055 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5272/swagger/index.html - 200 null text/html;charset=utf-8 298.225ms

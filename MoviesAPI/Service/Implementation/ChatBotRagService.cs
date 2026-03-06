@@ -1,4 +1,3 @@
-using MoviesAPI.Repositories.Interface;
 using MoviesAPI.Service.Interface;
 using System.Text;
 
@@ -6,34 +5,22 @@ namespace MoviesAPI.Service.Implementation
 {
     public class ChatBotRagService : IChatBotRagService
     {
-        private readonly IChatBotRepository _chatBotRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IOpenAIService _openAIService;
-        private readonly IScreeningRepository _screeningRepository;
-        private readonly IMovieRepository _movieRepository;
-        private readonly ITicketRepository _ticketRepository;
-        private readonly IHallRepository _hallRepository;
 
         public ChatBotRagService(
-            IChatBotRepository chatBotRepository,
-            IOpenAIService openAIService,
-            IScreeningRepository screeningRepository,
-            IMovieRepository movieRepository,
-            ITicketRepository ticketRepository,
-            IHallRepository hallRepository)
+            IUnitOfWork unitOfWork,
+            IOpenAIService openAIService)
         {
-            _chatBotRepository = chatBotRepository;
+            _unitOfWork = unitOfWork;
             _openAIService = openAIService;
-            _screeningRepository = screeningRepository;
-            _movieRepository = movieRepository;
-            _ticketRepository = ticketRepository;
-            _hallRepository = hallRepository;   
         }
 
         public async Task<string> AskQuestionAsync(string userQuestion)
         {
             var contextBuilder = new StringBuilder();
 
-            var faqs = await _chatBotRepository.GetAllFaqAsync();
+            var faqs = await _unitOfWork.ChatBot.GetAllFaqAsync();
             var matchedFaq = faqs.FirstOrDefault(f =>
                 f.Question.ToLower().Contains(userQuestion.ToLower()));
 
@@ -48,7 +35,7 @@ namespace MoviesAPI.Service.Implementation
             if (userQuestion.ToLower().Contains("tomorrow"))
                 date = date.AddDays(1);
 
-            var screenings = await _screeningRepository.GetScreeningsAsync();
+            var screenings = await _unitOfWork.Screenings.GetScreeningsAsync();
 
             if (screenings != null && screenings.Any())
             {
@@ -57,13 +44,13 @@ namespace MoviesAPI.Service.Implementation
                 foreach (var s in screenings.Where(s =>
                     s.ScreeningDateTime.Date == date.ToDateTime(TimeOnly.MinValue).Date))
                 {
-                    var movie = await _movieRepository.GetMovieAsync(s.MovieId);
+                    var movie = await _unitOfWork.Movies.GetMovieAsync(s.MovieId);
                     if (movie == null) continue;
 
-                    var hallSeats = await _hallRepository.GetSeatsByHallIdAsync(s.HallId);
+                    var hallSeats = await _unitOfWork.Halls.GetSeatsByHallIdAsync(s.HallId);
 
                     // Count tickets for this screening
-                    var tickets = await _ticketRepository.GetTicketsAsync();
+                    var tickets = await _unitOfWork.Tickets.GetTicketsAsync();
                     int purchasedTickets = tickets.Count(t => t.MovieId == s.MovieId && t.WatchDateTime.Date == s.ScreeningDateTime.Date);
 
                     int availableTickets = hallSeats.Count - purchasedTickets;

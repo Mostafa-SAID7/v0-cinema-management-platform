@@ -18,7 +18,7 @@ namespace MoviesAPI.Data
                 .Build();
 
             // Get connection string
-            var connectionString = configuration.GetConnectionString("SqlServerDB");
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
 
             // Create DbContextOptions
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();

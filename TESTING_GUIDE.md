@@ -1,11 +1,124 @@
-# CinemaVerse - Testing Guide
+# CinemaVerse Component Testing Guide
 
 ## Overview
-Complete testing guide for verifying all features, fixes, and enhancements.
 
----
+This guide covers unit tests, integration tests, accessibility tests, and e2e tests for shadcn-aligned components.
 
-## 🧪 Manual Testing Checklist
+## Unit Testing Setup
+
+### Jest Configuration
+
+Install dependencies:
+
+```bash
+npm install --save-dev jest @angular/core @testing-library/angular @testing-library/jest-dom jest-preset-angular
+```
+
+## Component Testing Patterns
+
+### Button Component Tests
+
+```typescript
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ButtonComponent } from './button.component';
+
+describe('ButtonComponent', () => {
+  let component: ButtonComponent;
+  let fixture: ComponentFixture<ButtonComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ButtonComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ButtonComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  describe('Variants', () => {
+    it('should apply primary variant', () => {
+      component.variant = signal('primary');
+      fixture.detectChanges();
+
+      const button = fixture.nativeElement.querySelector('button');
+      expect(button.classList.contains('bg-primary')).toBe(true);
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('should have aria-disabled attribute when disabled', () => {
+      component.disabled = signal(true);
+      fixture.detectChanges();
+
+      const button = fixture.nativeElement.querySelector('button');
+      expect(button.getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('should emit clicked event', (done) => {
+      component.clicked.subscribe((event: PointerEvent) => {
+        expect(event.type).toBe('click');
+        done();
+      });
+
+      const button = fixture.nativeElement.querySelector('button');
+      button.click();
+    });
+  });
+});
+```
+
+### Accessibility Testing
+
+Setup axe-core:
+
+```bash
+npm install --save-dev @axe-core/react axe-jest
+```
+
+```typescript
+import { axe, toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
+
+describe('Button Accessibility', () => {
+  let component: ButtonComponent;
+  let fixture: ComponentFixture<ButtonComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ButtonComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ButtonComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should not have accessibility violations', async () => {
+    const results = await axe(fixture.nativeElement);
+    expect(results).toHaveNoViolations();
+  });
+});
+```
+
+## Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm test -- --coverage
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run specific test file
+npm test -- button.component.spec.ts
+```
+
+## Manual Testing Checklist
 
 ### Discovery Page Testing
 Location: `http://localhost:4200/`

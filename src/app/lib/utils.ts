@@ -48,14 +48,14 @@ export type VariantProps<T extends CVAConfig> = {
 export function cva(
   base: string,
   config: CVAConfig
-): (props?: VariantProps<CVAConfig> & { class?: string }) => string {
-  return (props = {}) => {
+): (props?: Record<string, any> & { class?: string }) => string {
+  return (props: Record<string, any> = {}) => {
     const classes: string[] = [config.base || base];
 
     // Add variant classes
     if (config.variants) {
       for (const [variantKey, variantValue] of Object.entries(config.variants)) {
-        const selectedVariant = props[variantKey];
+        const selectedVariant = (props as Record<string, any>)[variantKey];
         if (selectedVariant && variantValue[selectedVariant as string]) {
           classes.push(variantValue[selectedVariant as string]);
         } else if (config.defaultVariants?.[variantKey]) {
@@ -72,7 +72,7 @@ export function cva(
         let matches = true;
         for (const [key, value] of Object.entries(compound)) {
           if (key === 'class') continue;
-          const propValue = props[key];
+          const propValue = (props as Record<string, any>)[key];
           if (Array.isArray(value)) {
             if (!value.includes(propValue as string)) {
               matches = false;
